@@ -1,0 +1,258 @@
+#!/bin/busybox sh
+
+mount -n -t proc     proc     /proc
+echo 0 > /proc/sys/kernel/printk
+
+mount -n -t devtmpfs devtmpfs /dev
+mount -n -t sysfs    sysfs    /sys
+mount -n -t tmpfs    tmpfs    /run
+
+
+cat <<EOF
+
+        _____ __  __  ___   _   _   ___   _____ 
+       |__  / \ \/ / |_ _| | \ | | |_ _| |_   _|
+         / /   \  /   | |  |  \| |  | |    | |  
+        / /_   /  \   | |  | |\  |  | |    | |  
+       /____| /_/\_\ |___| |_| \_| |___|   |_| 
+
+EOF
+
+
+info() {
+	if [ -z "$QUIET" ]; then
+		echo " [I] $1"
+	fi
+}
+warn() {
+	echo " [W] $1"
+}
+fatal() {
+	echo " [!] FATAL ERROR: $1"
+	echo 1 > /proc/sys/kernel/printk
+	echo ".Entering rescue shell."
+	exec /bin/busybox sh
+}
+
+
+z_fsck() {
+	[ -n "$1" ] || fatal "z_fsck(): Wrong argument error. Value format - DEV,FS. Example: z_fsck=\"vg0/system:ext4,vg0/data:ext4\" (no /dev prefix)"
+
+	local FRIENDLY_ARGS=
+	local DEV=
+	local FS=
+
+	FRIENDLY_ARGS=`echo "$1" | sed -r 's/,/ /g'`
+
+	for CHECK in ${FRIENDLY_ARGS}; do
+		DEV=`echo "${CHECK}" | awk -F: '{print $1}'`
+		FS=`echo "${CHECK}" | awk -F: '{print $2}'`
+		info "Force check file system ${FS} on /dev/${DEV}"
+		/sbin/fsck -f -p -t "${FS}" -f "/dev/${DEV}" || warn "z_fsck(): Cannot check filesystem on /dev/${DEV} (${FS})."
+	done
+}
+
+z_quiet() {
+	QUIET="yes"
+}
+
+z_pwd() {
+	[ -n "$1" ] || fatal "z_pwd(): Wrong argument error. Example: z_pwd=\"P@ssw0rd\""
+	info "	Set RAMFS password for user 'root'"
+	echo "root:$1" | /bin/busybox chpasswd
+}
+
+z_root() {
+	[ -n "$1" ] || fatal "z_root(): Wrong argument error. Example: z_root=\"vg0/system,ext3[,discard]\" (no /dev prefix)"
+
+	local DEV=
+	local FS=
+	local MOUNTPOINT=
+	DEV=$(echo "$1" | cut -d, -f1)
+	FS=$(echo "$1" | cut -d, -f2)
+	OPTS=$(echo "$1" | cut -d, -f3-)
+
+	[ -z "$DEV" ] && fatal "z_root(): Argument error. Bad device."
+	[ -z "$FS" ] && fatal "z_root(): Argument error. Bad filesystem type."
+
+	info "Mount filesystem /dev/$DEV ($FS) to /newroot"
+	[ -b "/dev/$DEV" ] || fatal "z_root(): Device /dev/$DEV does not exist."
+	if [ ! -d /newroot ]; then
+		mkdir /newroot || fatal "z_root(): Cannot create mountpoint /newroot"
+	fi
+
+	mount -o "$OPTS" -n -t "$FS" "/dev/$DEV" /newroot || fatal "z_root(): Cannot mount /dev/$DEV to /newroot"
+}
+
+z_shell() {
+	echo -n " Press 'S' to enter interactive shell..."
+	local COUNTDOWN=
+	COUNTDOWN=8
+	while [ $COUNTDOWN -gt 0 ]; do
+		let "COUNTDOWN=$COUNTDOWN-1"
+		KEY=""
+		read -t 1 -s -n 1 KEY
+		if [ "$KEY" == "S" -o "$KEY" == "s" ]; then
+			echo
+			info "ZXTeam's init script was interrupted. Exit from current shell to continue init script."
+			/bin/busybox sh
+			break;
+		elif [ -n "$KEY" ]; then
+			let "COUNTDOWN=$COUNTDOWN+1"
+		fi
+		echo -n " $COUNTDOWN"
+	done
+	echo
+}
+
+z_uncrypt() {
+	[ -n "$1" ] || fatal "z_uncrypt(): Wrong argument error. Example: z_uncrypt=\"sda2,uncrypted-sda2[,allow-discards]\" (no /dev prefix)"
+	/uncrypt.sh "$1" || fatal "z_uncrypt(): Script /uncrypt.sh failed."
+	return 0
+}
+
+z_vgs() {
+	[ -n "$1" ] || fatal "z_vgs(): Wrong argument error. Example: z_vgs=\"vg0,vg1,vg2,...\" (no /dev prefix)"
+
+	info " Scanning for Volume Groups"
+	/sbin/vgscan || fatal "z_vgs(): Cannot scan volume groups"
+
+ 	local FRIENDLY_ARGS=
+
+	FRIENDLY_ARGS=`echo "$1" | sed -r 's/,/ /g'`
+
+	for VG in ${FRIENDLY_ARGS}; do
+ 		info " Activating Volume Group: $VG"
+		/sbin/vgchange --activate y "$VG" || fatal "z_vgs(): Cannot activate volume $VG"
+	done
+
+	# /sbin/vgscan --mknodes || fatal "z_vgs(): Cannot make volume group nodes"
+}
+z_snap() {
+	[ -n "$1" ] || fatal "z_snap(): Wrong argument error. Example: z_snap=\"vg0/luks-root:10G,vg0/luks-data:250M\""
+
+ 	local FRIENDLY_ARGS=
+
+	FRIENDLY_ARGS=`echo "$1" | sed -r 's/,/ /g'`
+
+	for SNAP in ${FRIENDLY_ARGS}; do
+		local LV_DEV=
+		local LV_SIZE=
+		local LV_SNAPNAME=
+		local LV_SNAPDEV=
+
+		LV_DEV=/dev/$(echo "${SNAP}" | awk -F: '{print $1}')
+		LV_SIZE=$(echo "${SNAP}" | awk -F: '{print $2}')
+		#LV_SNAPNAME=`basename "${LV_DEV}"`-bootsnap`date '+%Y%m%d%H%M%S'`
+		LV_SNAPNAME=$(basename "${LV_DEV}")-bootsnap
+		LV_SNAPDEV=$(dirname "${LV_DEV}")/${LV_SNAPNAME}
+
+		if [ -b "${LV_SNAPDEV}" ]; then
+			info "	Removing previous snapshot"
+			local LV_ORIGIN=
+			LV_ORIGIN=`/sbin/lvs "${LV_SNAPDEV}" | tail -n 1 | awk '{print $5}'`
+			[ -z "${LV_ORIGIN}" ] && fatal "Looks like ${LV_SNAPDEV} is not a snapshot(has not Pool Origin)! Something wrong in ZXInit configuration! Please check!"
+			/sbin/lvremove -f "${LV_SNAPDEV}" || fatal "Cannot remove LV snapshot ${LV_SNAPDEV}"
+		fi
+
+		info "	Create LVM snapshot ${LV_SNAPNAME} (size: ${LV_SIZE}) for volume ${LV_DEV}"
+		/sbin/lvcreate --snapshot --permission r --size "${LV_SIZE}" --name "${LV_SNAPNAME}" "${LV_DEV}" || fatal "Cannot create LV snapshot."
+	done
+}
+
+# Set up busybox'es symlinks
+/bin/busybox --install -s
+
+ln -s /proc/mounts /etc/mtab || fatal "Cannot link /etc/mtab -> /proc/mounts"
+
+#echo /sbin/mdev > /proc/sys/kernel/hotplug
+#/bin/busybox mdev -s || /bin/sh
+#echo "" > /proc/sys/kernel/hotplug
+
+echo "Starting udev daemon..."
+/sbin/udevd --daemon --resolve-names=never
+UDEV_RC=$?
+udevadm trigger
+udevadm settle
+[ $UDEV_RC -eq 0 ] || fatal "Failed to start udev daemon. Exit code: $UDEV_RC"
+unset UDEV_RC
+
+# Kernel command-line
+KCMD=$(cat "/proc/cmdline")
+
+echo "Executing commands..."
+for PARAM in $KCMD; do
+	NAME=$(echo "$PARAM" | awk -F= '{print $1}')
+	VALUE=$(echo "$PARAM" | awk -F= '{print $2}' | sed -e 's/^"//' -e 's/"$//')
+	case "$NAME" in
+		z_*)
+			$NAME "$VALUE" || fatal "Cannot execute $NAME $VALUE"
+			;;
+	esac
+	unset NAME
+	unset VALUE
+done
+
+echo "Stopping udev daemon..."
+killall udevd
+sleep 1
+
+# z_snap=vg0/system-x64_86-gentoo,1G z_root=vg0/system-x64_86-gentoo
+# net.ifnames=1
+# z_ip="eth0,94.154.211.54,255.255.255.0,94.154.211.1" 
+# z_dropbear 
+# z_md="md0,sdb1,sdc1,sdd1,sde1"
+# z_md="md1,sdb2,sdc2"
+# z_md="md2,sdd2,sde2"
+# z_md="md3,md1,md2"
+# z_md="md4,sdb3,sdc3"
+# z_md="md5,sdd3,sde3"
+# z_md="md6,md4,md5"
+# z_md="md7,sdb4,sdc4,sdd4,sde4"
+# z_uncrypt="md3,uncrypted-md3"
+
+if [ -d /newroot/lib ]; then
+	KERNEL_RELEASE=$(uname -r)
+	if [ -d "/lib/modules/${KERNEL_RELEASE}" ]; then
+			echo "Checking modules..."
+			NEED_TO_COPY="no"
+			if [ ! -d "/newroot/lib/modules/${KERNEL_RELEASE}" ]; then
+				NEED_TO_COPY="yes"
+			else
+				cd /lib/modules/
+				RELEASE_MODULES_SUM=$(find "${KERNEL_RELEASE}" -type f | sort | xargs sha1sum | sha1sum | cut -d' ' -f1)
+				cd /newroot/lib/modules/
+				EXISTING_MODULES_SUM=$(find "${KERNEL_RELEASE}" -type f | sort | xargs sha1sum | sha1sum | cut -d' ' -f1)
+				if [ "${RELEASE_MODULES_SUM}" != "${EXISTING_MODULES_SUM}" ]; then
+					NEED_TO_COPY="yes"
+				fi
+			fi
+
+			if [ "${NEED_TO_COPY}" = "yes" ]; then
+				echo "Re-mounting the /newroot filesystem as RW to copy modules..."
+				mount --options remount,rw /newroot
+				/bin/sh
+			else
+				info "Skip modules syncing. Looks like modules are same in initramfs and rootfs"
+			fi
+	else
+		info "Skip modules syncing due the initramfs has not embedded kernel modules."
+	fi
+
+else
+	warn "Modules from /lib/modules/${KERNEL_RELEASE} were not synced due directory /newroot/lib is not exist."
+fi
+
+echo 1 > /proc/sys/kernel/printk
+
+# Clean up.
+umount -n /run
+umount -n /sys
+umount -n /dev
+
+echo 1 > /proc/sys/kernel/printk
+
+umount -n /proc
+
+# Boot the real thing.
+exec switch_root /newroot /sbin/init $@

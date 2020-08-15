@@ -36,17 +36,17 @@ fatal() {
 
 
 z_fsck() {
-	[ -n "$1" ] || fatal "z_fsck(): Wrong argument error. Example: z_fsck=\"vg0/system:ext4,vg0/data:ext4\" (no /dev prefix)"
+	[ -n "$1" ] || fatal "z_fsck(): Wrong argument error. Example: z_fsck=\"vg0/system,ext4;vg0/data,ext4\" (no /dev prefix)"
 
 	local FRIENDLY_ARGS=
 	local DEV=
 	local FS=
 
-	FRIENDLY_ARGS=$(echo "$1" | sed -r 's/,/ /g')
+	FRIENDLY_ARGS=$(echo "$1" | sed -r 's/;/ /g')
 
 	for CHECK in ${FRIENDLY_ARGS}; do
-		DEV=$(echo "${CHECK}" | cut -d: -f1)
-		FS=$(echo "${CHECK}" | cut -d: -f2)
+		DEV=$(echo "${CHECK}" | cut -d, -f1)
+		FS=$(echo "${CHECK}" | cut -d, -f2)
 		info "Force check file system ${FS} on /dev/${DEV}"
 		/sbin/fsck -f -p -t "${FS}" -f "/dev/${DEV}" || warn "z_fsck(): Cannot check filesystem on /dev/${DEV} (${FS})."
 	done
@@ -54,16 +54,16 @@ z_fsck() {
 
 
 z_ip() {
-	[ -n "$1" ] || fatal "z_ip(): Wrong argument error. Example: z_ip=\"eth0:192.168.0.100/24[:192.168.0.1][,eth1:10.0.0.42/8[:10.0.0.254]]\")"
-	FRIENDLY_ARGS=$(echo "$1" | sed -r 's/,/ /g')
+	[ -n "$1" ] || fatal "z_ip(): Wrong argument error. Example: z_ip=\"eth0,192.168.0.100/24[,192.168.0.1][;eth1,10.0.0.42/8[,10.0.0.254]]\")"
+	FRIENDLY_ARGS=$(echo "$1" | sed -r 's/;/ /g')
 	for NETCFG in ${FRIENDLY_ARGS}; do
 		local DEV=
 		local IP_WITH_MASK=
 		local GW=
 
-		DEV=$(echo "${NETCFG}" | cut -d: -f1)
-		IP_WITH_MASK=$(echo "${NETCFG}" | cut -d: -f2)
-		GW=$(echo "${NETCFG}" | cut -d: -f3)
+		DEV=$(echo "${NETCFG}" | cut -d, -f1)
+		IP_WITH_MASK=$(echo "${NETCFG}" | cut -d, -f2)
+		GW=$(echo "${NETCFG}" | cut -d, -f3)
 
 		local IP=
 		local PREFIX=
@@ -100,17 +100,15 @@ z_ip() {
 	done
 }
 
-
-
 z_md() {
-	[ -n "$1" ] || fatal "z_md():  Wrong argument error. Example: z_md=\"md0:sda1:[sdb1:...][,md1:sda5:[sdb5:...]]\""
-	FRIENDLY_ARGS=$(echo "$1" | sed -r 's/,/ /g')
+	[ -n "$1" ] || fatal "z_md():  Wrong argument error. Example: z_md=\"md0,sda1,[sdb1,...][;md1,sda5,[sdb5,...]]\""
+	FRIENDLY_ARGS=$(echo "$1" | sed -r 's/;/ /g')
 	for MDTARGET in ${FRIENDLY_ARGS}; do
 		local MD_DEV=
 		local MEMBER_DEVS=
 
-		MD_DEV=/dev/$(echo "${MDTARGET}" | cut -d: -f1)
-		MEMBER_DEVS=$(echo "${MDTARGET}" | cut -d: -f2- | cut -d: -f2- | sed -r 's/:/ /g' | sed 's/[^ ]* */\/dev\/&/g')
+		MD_DEV=/dev/$(echo "${MDTARGET}" | cut -d, -f1)
+		MEMBER_DEVS=$(echo "${MDTARGET}" | cut -d, -f2- | cut -d: -f2- | sed -r 's/,/ /g' | sed 's/[^ ]* */\/dev\/&/g')
 
 		/sbin/mdadm --assemble --run ${MD_DEV} ${MEMBER_DEVS} || fatal "z_md(): Cannot MD assemble: ${MD_DEV} ${MEMBER_DEVS}"
 		#/sbin/mdadm --assemble --update=name --run ${MD_DEV} ${MEMBER_DEVS} || fatal "z_md(): Cannot MD assemble: ${MD_DEV} ${MEMBER_DEVS}"
@@ -171,11 +169,11 @@ z_shell() {
 }
 
 z_snap() {
-	[ -n "$1" ] || fatal "z_snap(): Wrong argument error. Example: z_snap=\"vg0/luks-root:10G,vg0/luks-data:250M\""
+	[ -n "$1" ] || fatal "z_snap(): Wrong argument error. Example: z_snap=\"vg0/luks-root,10G;vg0/luks-data,250M\""
 
  	local FRIENDLY_ARGS=
 
-	FRIENDLY_ARGS=$(echo "$1" | sed -r 's/,/ /g')
+	FRIENDLY_ARGS=$(echo "$1" | sed -r 's/;/ /g')
 
 	for SNAP in ${FRIENDLY_ARGS}; do
 		local LV_DEV=
@@ -183,8 +181,8 @@ z_snap() {
 		local LV_SNAPNAME=
 		local LV_SNAPDEV=
 
-		LV_DEV=/dev/$(echo "${SNAP}" | awk -F: '{print $1}')
-		LV_SIZE=$(echo "${SNAP}" | awk -F: '{print $2}')
+		LV_DEV=/dev/$(echo "${SNAP}" | cut -d, -f1)
+		LV_SIZE=$(echo "${SNAP}" | cut -d, -f1)
 		LV_SNAPNAME=$(basename "${LV_DEV}")-bootsnap
 		LV_SNAPDEV=$(dirname "${LV_DEV}")/${LV_SNAPNAME}
 
@@ -210,20 +208,20 @@ z_ssh() {
 }
 
 z_uncrypt() {
-	[ -n "$1" ] || fatal "z_uncrypt(): Wrong argument error. Example: z_uncrypt=\"sda2:uncrypted-sda2[:allow-discards][,vg0/luks-root:uncrypted-root[:allow-discards]]\" (no /dev prefix)"
+	[ -n "$1" ] || fatal "z_uncrypt(): Wrong argument error. Example: z_uncrypt=\"sda2,uncrypted-sda2[,allow-discards][;vg0/luks-root,uncrypted-root[,allow-discards]]\" (no /dev prefix)"
 	/uncrypt.sh "$1" || fatal "z_uncrypt(): Script /uncrypt.sh failed."
 	return 0
 }
 
 z_vgs() {
-	[ -n "$1" ] || fatal "z_vgs(): Wrong argument error. Example: z_vgs=\"vg0,vg1,vg2,...\" (no /dev prefix)"
+	[ -n "$1" ] || fatal "z_vgs(): Wrong argument error. Example: z_vgs=\"vg0;vg1;vg2;...\" (no /dev prefix)"
 
 	info " Scanning for Volume Groups"
 	/sbin/vgscan || fatal "z_vgs(): Cannot scan volume groups"
 
  	local FRIENDLY_ARGS=
 
-	FRIENDLY_ARGS=$(echo "$1" | sed -r 's/,/ /g')
+	FRIENDLY_ARGS=$(echo "$1" | sed -r 's/;/ /g')
 
 	for VG in ${FRIENDLY_ARGS}; do
  		info " Activating Volume Group: $VG"

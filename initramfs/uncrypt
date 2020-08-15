@@ -22,10 +22,9 @@ fatal() {
 
 
 uncrypt() {
-	[ -n "$1" ] || fatal "Wrong argument error. Example: \"sda2:uncrypted-sda2[:allow-discards][,vg0/luks-root:uncrypted-root[:allow-discards]]\" (no /dev prefix)"
+	[ -n "$1" ] || fatal "Wrong argument error. Example: \"sda2,uncrypted-sda2[,allow-discards][;vg0/luks-root,uncrypted-root[,allow-discards]]\" (no /dev prefix)"
 
-   #Example: z_uncrypt=\"sda2,uncrypted-sda2[,allow-discards]\"
-	FRIENDLY_ARGS=$(echo "$1" | sed -r 's/,/ /g')
+	FRIENDLY_ARGS=$(echo "$1" | sed -r 's/;/ /g')
 
 	for UNCRYPT_TAGET in ${FRIENDLY_ARGS}; do
 
@@ -33,10 +32,10 @@ uncrypt() {
 		local UNCRYPTED_NAME=
 		local CRYPTSETUP_OPTS=
 
-		DEV=/dev/$(echo "${UNCRYPT_TAGET}" | cut -d: -f1)
-		UNCRYPTED_NAME=$(echo "${UNCRYPT_TAGET}" | cut -d: -f2)
+		DEV=/dev/$(echo "${UNCRYPT_TAGET}" | cut -d, -f1)
+		UNCRYPTED_NAME=$(echo "${UNCRYPT_TAGET}" | cut -d, -f2)
 		
-		for ARG in `echo "$UNCRYPT_TAGET" | cut -d: -f3-`; do
+		for ARG in `echo "$UNCRYPT_TAGET" | cut -d, -f3- | sed -r 's/,/ /g'`; do
 			case "${ARG}" in
 				allow-discards)
 					CRYPTSETUP_OPTS="${CRYPTSETUP_OPTS} --allow-discards"

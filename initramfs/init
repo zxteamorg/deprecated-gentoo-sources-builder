@@ -110,7 +110,7 @@ z_md() {
 		local MEMBER_DEVS=
 
 		MD_DEV=/dev/$(echo "${MDTARGET}" | cut -d: -f1)
-		MEMBER_DEVS=$(echo "${SNAP}" | cut -d: -f2- | cut -d: -f2- | sed -r 's/:/ /g' | sed 's/[^ ]* */\/dev\/&/g')
+		MEMBER_DEVS=$(echo "${MDTARGET}" | cut -d: -f2- | cut -d: -f2- | sed -r 's/:/ /g' | sed 's/[^ ]* */\/dev\/&/g')
 
 		/sbin/mdadm --assemble --run ${MD_DEV} ${MEMBER_DEVS} || fatal "z_md(): Cannot MD assemble: ${MD_DEV} ${MEMBER_DEVS}"
 		#/sbin/mdadm --assemble --update=name --run ${MD_DEV} ${MEMBER_DEVS} || fatal "z_md(): Cannot MD assemble: ${MD_DEV} ${MEMBER_DEVS}"

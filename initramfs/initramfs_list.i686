@@ -17,6 +17,8 @@ dir /sbin              755 0 0
 dir /sys               755 0 0
 dir /var               755 0 0
 dir /usr               755 0 0
+dir /usr/bin           755 0 0
+dir /usr/sbin          755 0 0
 dir /usr/share         755 0 0
 
 # busybox
@@ -72,8 +74,16 @@ slink   /sbin/vgcreate                          /sbin/lvm                       
 slink   /sbin/vgdisplay                         /sbin/lvm                           755 0 0
 slink   /sbin/vgscan                            /sbin/lvm                           755 0 0
 
+# Tool for running RAID systems
+file    /sbin/mdadm                             /sbin/mdadm                         755 0 0
+
 # Cryptsetup
 file    /sbin/cryptsetup                        /sbin/cryptsetup                    755 0 0
+
+# Dropbear SSH Server
+file    /usr/bin/dbclient                       /usr/bin/dbclient                   755 0 0
+file    /usr/bin/dropbearkey                    /usr/bin/dropbearkey                755 0 0
+file    /usr/sbin/dropbear                      /usr/sbin/dropbear                  755 0 0
 
 # udevd
 file    /bin/udevadm                            /bin/udevadm                        755 0 0
@@ -81,5 +91,5 @@ slink   /sbin/udevadm                           /bin/udevadm                    
 #file    /lib/udev/collect                       /lib/udev/collect                   755 0 0
 
 #
-# NOTE: /init and modules will are added automatically by docker-entrypoint.sh
+# NOTE: /init, /uncrypt and modules will are added automatically by docker-entrypoint.sh
 #

@@ -1,4 +1,4 @@
-ARG GENTOO_DOCKER_BUILD_DATE=20200806
+ARG GENTOO_DOCKER_BUILD_DATE=20200812
 
 
 # Use the empty image with the portage tree as the first stage
@@ -13,20 +13,31 @@ ARG KERNEL_VERSION=
 COPY --from=portage /var/db /var/db
 
 # Install kernel sources
-RUN test -z "${KERNEL_VERSION}" && { echo "KERNEL_VERSION is not set" >&2; exit 1; } || true
+RUN test -n "${KERNEL_VERSION}" || { echo "KERNEL_VERSION is not set" >&2; exit 1; }
 RUN emerge --quiet =sys-kernel/gentoo-sources-${KERNEL_VERSION}
 
 # We need busybox to embed into initramfs
 # We need cpio to pack initramfs
 # We need LVM to embed into initramfs
-RUN echo "sys-firmware/intel-microcode intel-ucode" >> /etc/portage/package.license
-RUN echo "sys-kernel/linux-firmware linux-fw-redistributable no-source-code" >> /etc/portage/package.license
-RUN FEATURES="-ipc-sandbox -network-sandbox -pid-sandbox -sandbox -usersandbox" USE="bindist static static-libs" emerge --quiet app-arch/cpio sys-apps/busybox sys-firmware/intel-microcode sys-fs/cryptsetup sys-fs/lvm2 sys-kernel/linux-firmware
+RUN \
+	ACCEPT_LICENSE="intel-ucode linux-fw-redistributable no-source-code" \
+	FEATURES="-ipc-sandbox -network-sandbox -pid-sandbox -sandbox -usersandbox" \
+	USE="bindist static static-libs" \
+	emerge --quiet --oneshot \
+		app-arch/cpio \
+		sys-apps/busybox \
+		sys-firmware/intel-microcode \
+		sys-fs/cryptsetup \
+		sys-fs/lvm2 \
+		sys-fs/mdadm \
+		sys-kernel/linux-firmware
+
+RUN \
+	ACCEPT_KEYWORDS="~amd64" USE="minimal -pam static static-libs -syslog" \
+	emerge --quiet --oneshot \
+		dropbear
 
 RUN eselect kernel set 1
-
-RUN rm -rf /var/db
-RUN rm -rf /usr/share/man
 
 RUN cd /usr/src/linux && make -C usr/ gen_init_cpio && chmod +x usr/gen_init_cpio usr/gen_initramfs_list.sh
 
@@ -45,6 +56,7 @@ COPY sites/zxteam-bootsrv-asrock-pv530a-itx/i686/config-${KERNEL_VERSION}-gentoo
 # Initramfs
 COPY initramfs/init                                 /support/initramfs/init
 COPY initramfs/initramfs_list.i686                  /support/initramfs/initramfs_list
+COPY initramfs/uncrypt                              /support/initramfs/uncrypt
 
 
 COPY BANNER /support/BANNER
@@ -52,7 +64,12 @@ COPY misc /support/misc
 RUN echo "${KERNEL_VERSION}" > /support/KERNEL_VERSION
 COPY docker/docker-entrypoint.sh /support/docker-entrypoint.sh
 
+RUN rm -rf /var/db
+RUN rm -rf /usr/share/man
+
 #FROM scratch
 #COPY --from=stage / /
+
 VOLUME [ "/data" ]
+
 ENTRYPOINT [ "/support/docker-entrypoint.sh" ]

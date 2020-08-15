@@ -76,6 +76,7 @@ function build_kernel() {
 }
 
 function build_initramfs() {
+	echo "Building initramfs..."
 	local CPIO_LIST=$(mktemp)
 	cat "/data/usr/src/initramfs/initramfs_list" >> "${CPIO_LIST}"
 	echo >> "${CPIO_LIST}"
@@ -83,6 +84,7 @@ function build_initramfs() {
 	echo "file /etc/nsswitch.conf /support/misc/nsswitch.conf 644 0 0" >> "${CPIO_LIST}"
 	echo "file /etc/passwd /support/misc/passwd 644 0 0" >> "${CPIO_LIST}"
 	echo "file /init /data/usr/src/initramfs/init 755 0 0" >> "${CPIO_LIST}"
+	echo "file /uncrypt /data/usr/src/initramfs/uncrypt 755 0 0" >> "${CPIO_LIST}"
 	echo >> "${CPIO_LIST}"
 	echo "# Modules" >> "${CPIO_LIST}"
 	echo >> "${CPIO_LIST}"
@@ -114,6 +116,7 @@ function build_initramfs() {
 		INITRAMFS_FILE="initramfs-${KERNEL_VERSION}-gentoo"
 	fi
 
+	echo "Generating initramfs file ${INITRAMFS_FILE}.cpio.gz..."
 	./usr/gen_initramfs_list.sh -o "/data/boot/${INITRAMFS_FILE}.cpio.gz" "${CPIO_LIST}"
 	ln -sf "${INITRAMFS_FILE}.cpio.gz" /data/boot/initramfs.cpio.gz
 

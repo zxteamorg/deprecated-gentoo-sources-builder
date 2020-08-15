@@ -29,9 +29,6 @@ Debug initramfs of `zxteam-desktop-hp64xx` site
 
 ```
 docker build --tag zxteamorg/gentoo-sources-builder --build-arg KERNEL_VERSION=5.4.48 --file docker/amd64/Dockerfile . && \
-	docker run --rm --interactive --tty \
-		--env SITE=zxteam-desktop-hp64xx \
-		--volume $(pwd)/.data:/data \
-		--volume $PWD/initramfs:/data/usr/src/initramfs \
-		zxteamorg/gentoo-sources-builder initramfs
+rm -rf $PWD/.zxteam-desktop-hp64xx/usr/src/initramfs && \
+docker run --rm --interactive --tty --env SITE=zxteam-desktop-hp64xx --volume $PWD/.zxteam-desktop-hp64xx:/data zxteamorg/gentoo-sources-builder initramfs
 ```

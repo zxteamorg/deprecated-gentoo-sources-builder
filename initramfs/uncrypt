@@ -1,0 +1,125 @@
+#!/bin/busybox sh
+#
+#Logging
+info() {
+	if [ -z "$QUIET" ]; then
+		if [ -n "$1" ]; then
+			echo " [I] $1"
+		fi
+	fi
+}
+warn() {
+	if [ -n "$1" ]; then
+		echo " [W] $1"
+	fi
+}
+fatal() {
+	local ERROR_CODE
+	ERROR_CODE=$?
+	echo " [!] FATAL ERROR: $1"
+	exit 1
+}
+
+
+uncrypt() {
+	[ -n "$1" ] || fatal "Wrong argument error. Example: \"sda2:uncrypted-sda2[:allow-discards][,vg0/luks-root:uncrypted-root[:allow-discards]]\" (no /dev prefix)"
+
+   #Example: z_uncrypt=\"sda2,uncrypted-sda2[,allow-discards]\"
+	FRIENDLY_ARGS=$(echo "$1" | sed -r 's/,/ /g')
+
+	for UNCRYPT_TAGET in ${FRIENDLY_ARGS}; do
+
+		local DEV=
+		local UNCRYPTED_NAME=
+		local CRYPTSETUP_OPTS=
+
+		DEV=/dev/$(echo "${UNCRYPT_TAGET}" | cut -d: -f1)
+		UNCRYPTED_NAME=$(echo "${UNCRYPT_TAGET}" | cut -d: -f2)
+		
+		for ARG in `echo "$UNCRYPT_TAGET" | cut -d: -f3-`; do
+			case "${ARG}" in
+				allow-discards)
+					CRYPTSETUP_OPTS="${CRYPTSETUP_OPTS} --allow-discards"
+					;;
+				*)
+					warn "Param \"${ARG}\" is not supported"
+					;;
+			esac
+		done
+		unset ARG
+
+		[ -b "$DEV" ] || fatal "i_uncrypt(): Device \"$DEV\" is not exists"
+		[ -n "$UNCRYPTED_NAME" ] || fatal "i_uncrypt(): UNCRYPTED_NAME is not defined"
+
+		local UNCRYPTED_DEV="/dev/mapper/${UNCRYPTED_NAME}"
+
+		echo "Uncrypt ${DEV} => ${UNCRYPTED_DEV}"
+
+		# Load previous PASSKEYS
+		[ -f "/tmp/PASSKEYS" ] && PASSKEYS=$(cat /tmp/PASSKEYS)
+		if [ -n "${PASSKEYS}" ]; then
+			PASSKEYS="${PASSKEYS} "
+		fi
+		local SHOW_MSG=1
+		local FORCE_FIRST_ITERATION=0
+		[ ${#PASSKEYS} -gt 0 ] && FORCE_FIRST_ITERATION=1
+		while [ ! -b "${UNCRYPTED_DEV}" ]; do
+			[ "${SHOW_MSG}" == "1" -a "${FORCE_FIRST_ITERATION}" == "0" ] && echo -n "Enter disk password: "
+			SHOW_MSG=0
+			unset CH
+			read -t 1 -s -n 1 CH
+			ERR_CODE=$?
+			if [ ${ERR_CODE} -eq 0 -o "${FORCE_FIRST_ITERATION}" == "1" ]; then
+				FORCE_FIRST_ITERATION=0
+				if [ -n "${CH}" ]; then
+					PASSKEYS="${PASSKEYS}${CH}"
+					echo -n "*"
+				else
+					[ ${ERR_CODE} -eq 0 ] && echo
+					for PASSKEY in ${PASSKEYS}; do
+						echo -n "* "
+						local SUCCESS_LUKSOPEN=0
+						if echo $PASSKEY | /sbin/cryptsetup ${CRYPTSETUP_OPTS} luksOpen "$DEV" "$UNCRYPTED_NAME" >/dev/null; then
+							SUCCESS_LUKSOPEN=1
+							break
+						fi
+					done
+					if [ ${SUCCESS_LUKSOPEN} -eq 1 ]; then
+						echo "	OK"
+						# Save valid PASSKEYS to /tmp/PASSKEYS
+						echo "${PASSKEYS}" > /tmp/PASSKEYS
+					else
+						echo "	FAILED"
+					fi
+					unset SUCCESS_LUKSOPEN
+					unset PASSKEY
+					PASSKEYS="${PASSKEYS} "
+					SHOW_MSG=1
+				fi
+			fi
+			unset PASSKEY
+			unset CH
+		done
+	done
+}
+
+
+if [ -n "$1" ]; then
+ # Launch from init
+ uncrypt "$1" || exit $?
+else
+	# Launch manually
+	for UNCRYPT_PARAM in $(cat /proc/cmdline); do
+		case "${UNCRYPT_PARAM}" in
+			z_uncrypt=*)
+				VALUE=$(echo "${UNCRYPT_PARAM}" | awk -F= '{print $2}' | sed -e 's/^"//' -e 's/"$//')
+				uncrypt "${VALUE}"
+				;;
+			*)
+				;;
+		esac
+	done
+	rm -rf "/tmp/PASSKEYS"
+fi
+
+exit 0

@@ -45,8 +45,8 @@ z_fsck() {
 	FRIENDLY_ARGS=$(echo "$1" | sed -r 's/,/ /g')
 
 	for CHECK in ${FRIENDLY_ARGS}; do
-		DEV=`echo "${CHECK}" | awk -F: '{print $1}'`
-		FS=`echo "${CHECK}" | awk -F: '{print $2}'`
+		DEV=$(echo "${CHECK}" | cut -d: -f1)
+		FS=$(echo "${CHECK}" | cut -d: -f2)
 		info "Force check file system ${FS} on /dev/${DEV}"
 		/sbin/fsck -f -p -t "${FS}" -f "/dev/${DEV}" || warn "z_fsck(): Cannot check filesystem on /dev/${DEV} (${FS})."
 	done
@@ -55,7 +55,7 @@ z_fsck() {
 
 z_ip() {
 	[ -n "$1" ] || fatal "z_ip(): Wrong argument error. Example: z_ip=\"eth0:192.168.0.100/24[:192.168.0.1][,eth1:10.0.0.42/8[:10.0.0.254]]\")"
-	FRIENDLY_ARGS=`echo "$1" | sed -r 's/,/ /g'`
+	FRIENDLY_ARGS=$(echo "$1" | sed -r 's/,/ /g')
 	for NETCFG in ${FRIENDLY_ARGS}; do
 		local DEV=
 		local IP_WITH_MASK=
@@ -97,7 +97,7 @@ z_ip() {
 			info "Set up defult route: $GW"
 			route add default gw "$GW" "$DEV"
 		fi
-	fi
+	done
 }
 
 
@@ -191,7 +191,7 @@ z_snap() {
 		if [ -b "${LV_SNAPDEV}" ]; then
 			info "	Removing previous snapshot"
 			local LV_ORIGIN=
-			LV_ORIGIN=`/sbin/lvs "${LV_SNAPDEV}" | tail -n 1 | awk '{print $5}'`
+			LV_ORIGIN=$(/sbin/lvs "${LV_SNAPDEV}" | tail -n 1 | awk '{print $5}')
 			[ -z "${LV_ORIGIN}" ] && fatal "Looks like ${LV_SNAPDEV} is not a snapshot(has not Pool Origin)! Something wrong in ZXInit configuration! Please check!"
 			/sbin/lvremove -f "${LV_SNAPDEV}" || fatal "Cannot remove LV snapshot ${LV_SNAPDEV}"
 		fi
@@ -250,7 +250,7 @@ echo "#!/bin/busybox sh" > /tmp/cleanup.sh
 echo >> /tmp/cleanup.sh
 echo "set -e" >> /tmp/cleanup.sh
 echo >> /tmp/cleanup.sh
-chmod +x /tmp/cleanup.sh
+chmod +x /tmp/cleanup.sh || fatal "Cannot make executeble cleanup script tmp/cleanup.sh"
 
 
 # Kernel command-line
@@ -311,7 +311,7 @@ if [ -d /newroot/lib ]; then
 
 			if [ "${NEED_TO_COPY}" = "yes" ]; then
 				echo "Re-mounting the /newroot filesystem as RW to copy modules..."
-				mount --options remount,rw /newroot
+				mount -o remount,rw /newroot
 				/bin/sh
 			else
 				info "Skip modules syncing. Looks like modules are same in initramfs and rootfs"

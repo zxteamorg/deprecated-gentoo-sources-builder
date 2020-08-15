@@ -182,7 +182,7 @@ z_snap() {
 		local LV_SNAPDEV=
 
 		LV_DEV=/dev/$(echo "${SNAP}" | cut -d, -f1)
-		LV_SIZE=$(echo "${SNAP}" | cut -d, -f1)
+		LV_SIZE=$(echo "${SNAP}" | cut -d, -f2)
 		LV_SNAPNAME=$(basename "${LV_DEV}")-bootsnap
 		LV_SNAPDEV=$(dirname "${LV_DEV}")/${LV_SNAPNAME}
 

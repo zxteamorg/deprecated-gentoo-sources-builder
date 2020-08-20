@@ -25,10 +25,18 @@ TBD
 
 ## Dev notes
 
-Debug initramfs of `zxteam-desktop-hp64xx` site
+### Debug initramfs of `zxteam-desktop-hp64xx` site
 
 ```
-docker build --tag zxteamorg/gentoo-sources-builder --build-arg KERNEL_VERSION=5.4.48 --file docker/amd64/Dockerfile . && \
+docker build --tag zxteamorg/gentoo-sources-builder-amd64 --build-arg KERNEL_VERSION=5.4.48 --file docker/amd64/Dockerfile . && \
 rm -rf $PWD/.zxteam-desktop-hp64xx/usr/src/initramfs && \
-docker run --rm --interactive --tty --env SITE=zxteam-desktop-hp64xx --volume $PWD/.zxteam-desktop-hp64xx:/data zxteamorg/gentoo-sources-builder initramfs
+docker run --rm --interactive --tty --env SITE=zxteam-desktop-hp64xx --volume $PWD/.zxteam-desktop-hp64xx:/data zxteamorg/gentoo-sources-builder-amd64 initramfs
+```
+
+### Debug initramfs of `zxteam-bootsrv-asrock-pv530a-itx` site
+
+```
+docker build --tag zxteamorg/gentoo-sources-builder-i686 --build-arg KERNEL_VERSION=5.4.48 --file docker/i686/Dockerfile . && \
+rm -rf $PWD/.zxteam-bootsrv-asrock-pv530a-itx/usr/src/initramfs && \
+docker run --rm --interactive --tty --env SITE=zxteam-bootsrv-asrock-pv530a-itx --volume $PWD/.zxteam-bootsrv-asrock-pv530a-itx:/data zxteamorg/gentoo-sources-builder-i686 initramfs
 ```

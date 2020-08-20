@@ -1,12 +1,14 @@
 #!/bin/busybox sh
 
-mount -n -t proc     proc     /proc
+set -o pipefail
+
+mount -n -t proc proc /proc || fatal "Cannot mount /proc"
 echo 0 > /proc/sys/kernel/printk
 
-mount -n -t devtmpfs devtmpfs /dev
-mount -n -t sysfs    sysfs    /sys
-mount -n -t tmpfs    tmpfs    /run
-
+mount -n -t devtmpfs devtmpfs /dev || fatal "Cannot mount /dev"
+mkdir -m 0755 /dev/pts || fatal "Cannot create directory /dev/pts with perms 755"
+mount -n -t devpts -o gid=5,mode=0620 devpts /dev/pts || fatal "Cannot mount /dev/pts"
+mount -n -t sysfs sysfs /sys || fatal "Cannot mount /dev/pts"
 
 cat <<EOF
 
@@ -52,7 +54,6 @@ z_fsck() {
 	done
 }
 
-
 z_ip() {
 	[ -n "$1" ] || fatal "z_ip(): Wrong argument error. Example: z_ip=\"eth0,192.168.0.100/24[,192.168.0.1][;eth1,10.0.0.42/8[,10.0.0.254]]\")"
 	FRIENDLY_ARGS=$(echo "$1" | sed -r 's/;/ /g')
@@ -87,7 +88,7 @@ z_ip() {
 		esac
 
 		info "Set up IP address: $IP $MASK for dev $DEV"
-		ifconfig "$DEV" "$IP" netmask "$MASK"
+		ifconfig "$DEV" "$IP" netmask "$MASK" || fatal "Cannot set IP address ${IP_WITH_MASK}."
 		echo "ifconfig $DEV 0.0.0.0" >> /tmp/cleanup.sh
 		echo "ifconfig $DEV down" >> /tmp/cleanup.sh
 
@@ -95,7 +96,7 @@ z_ip() {
 			info "Gateway is not defined"
 		else
 			info "Set up defult route: $GW"
-			route add default gw "$GW" "$DEV"
+			route add default gw "$GW" "$DEV" || fatal "Cannot set default route to $GW from device $DEV."
 		fi
 	done
 }
@@ -110,7 +111,8 @@ z_md() {
 		MD_DEV=/dev/$(echo "${MDTARGET}" | cut -d, -f1)
 		MEMBER_DEVS=$(echo "${MDTARGET}" | cut -d, -f2- | cut -d: -f2- | sed -r 's/,/ /g' | sed 's/[^ ]* */\/dev\/&/g')
 
-		/sbin/mdadm --assemble --run ${MD_DEV} ${MEMBER_DEVS} || fatal "z_md(): Cannot MD assemble: ${MD_DEV} ${MEMBER_DEVS}"
+		info " Assembling software RAID ${MD_DEV} on devices ${MEMBER_DEVS}..."
+		/sbin/mdadm --assemble --run ${MD_DEV} ${MEMBER_DEVS} || fatal "z_md(): Cannot MD assemble software RAID ${MD_DEV} on devices ${MEMBER_DEVS}"
 		#/sbin/mdadm --assemble --update=name --run ${MD_DEV} ${MEMBER_DEVS} || fatal "z_md(): Cannot MD assemble: ${MD_DEV} ${MEMBER_DEVS}"
 	done
 }
@@ -126,7 +128,7 @@ z_pwd() {
 }
 
 z_root() {
-	[ -n "$1" ] || fatal "z_root(): Wrong argument error. Example: z_root=\"vg0/system,ext3[,discard]\" (no /dev prefix)"
+	[ -n "$1" ] || fatal "z_root(): Wrong argument error. Example: z_root=\"vg0/system,ext3[,ro][,discard]\" (no /dev prefix)"
 
 	local DEV=
 	local FS=
@@ -148,28 +150,39 @@ z_root() {
 }
 
 z_shell() {
-	echo -n " Press 'S' to enter interactive shell..."
 	local COUNTDOWN=
-	COUNTDOWN=8
-	while [ $COUNTDOWN -gt 0 ]; do
-		let "COUNTDOWN=$COUNTDOWN-1"
-		KEY=""
-		read -t 1 -s -n 1 KEY
-		if [ "$KEY" == "S" -o "$KEY" == "s" ]; then
-			echo
-			info "ZXTeam's init script was interrupted. Exit from current shell to continue init script."
-			/bin/busybox sh
-			break;
-		elif [ -n "$KEY" ]; then
-			let "COUNTDOWN=$COUNTDOWN+1"
-		fi
-		echo -n " $COUNTDOWN"
-	done
+	COUNTDOWN=0
+	if [ -n "$1" ]; then
+		let "COUNTDOWN=$1*1"
+	fi
+
+	if [ $COUNTDOWN -eq 0 ]; then
+		echo
+		info " Shell was started by z_shell(). Exit from current shell to continue init script."
+		/bin/busybox sh
+	else
+		echo -n " Press 'S' to enter interactive shell..."
+
+		while [ $COUNTDOWN -gt 0 ]; do
+			let "COUNTDOWN=$COUNTDOWN-1"
+			KEY=""
+			read -t 1 -s -n 1 KEY
+			if [ "$KEY" == "S" -o "$KEY" == "s" ]; then
+				echo
+				info " Shell was started by z_shell(). Exit from current shell to continue init script."
+				/bin/busybox sh
+				break;
+			elif [ -n "$KEY" ]; then
+				let "COUNTDOWN=$COUNTDOWN+1"
+			fi
+			echo -n " $COUNTDOWN"
+		done
+	fi
 	echo
 }
 
 z_snap() {
-	[ -n "$1" ] || fatal "z_snap(): Wrong argument error. Example: z_snap=\"vg0/luks-root,10G;vg0/luks-data,250M\""
+	[ -n "$1" ] || fatal "z_snap(): Wrong argument error. Example: z_snap=\"vg0/luks-root,10G;vg0/luks-home,250M\""
 
  	local FRIENDLY_ARGS=
 
@@ -203,21 +216,25 @@ z_ssh() {
 	[ ! -f /root/dropbear.rsa ] && /usr/bin/dropbearkey -t rsa -f /root/dropbear.rsa
 	[ ! -f /root/dropbear.dss ] && /usr/bin/dropbearkey -t dss -f /root/dropbear.dss
 
-	/usr/sbin/dropbear -r /root/dropbear.rsa -d /root/dropbear.dss
+	/usr/sbin/dropbear -r /root/dropbear.rsa -d /root/dropbear.dss || fatal "Cannot start Dropbear SSH Server"
 	echo "pkill -f /usr/sbin/dropbear" >> /tmp/cleanup.sh
 }
 
 z_uncrypt() {
-	[ -n "$1" ] || fatal "z_uncrypt(): Wrong argument error. Example: z_uncrypt=\"sda2,uncrypted-sda2[,allow-discards][;vg0/luks-root,uncrypted-root[,allow-discards]]\" (no /dev prefix)"
-	/uncrypt.sh "$1" || fatal "z_uncrypt(): Script /uncrypt.sh failed."
+	[ -n "$1" ] || fatal "z_uncrypt(): Wrong argument error. Example: z_uncrypt=\"sda2,uncrypted-sda2[,discard][;vg0/luks-root,uncrypted-root[,discard]]\" (no /dev prefix)"
+	/uncrypt "$1" || fatal "z_uncrypt(): Script /uncrypt failed."
 	return 0
 }
 
-z_vgs() {
-	[ -n "$1" ] || fatal "z_vgs(): Wrong argument error. Example: z_vgs=\"vg0;vg1;vg2;...\" (no /dev prefix)"
+z_verbose() {
+	set -x
+}
+
+z_vg() {
+	[ -n "$1" ] || fatal "z_vg(): Wrong argument error. Example: z_vgs=\"vg0;vg1;vg2;...\" (no /dev prefix)"
 
 	info " Scanning for Volume Groups"
-	/sbin/vgscan || fatal "z_vgs(): Cannot scan volume groups"
+	/sbin/vgscan || fatal "z_vg(): Cannot scan volume groups"
 
  	local FRIENDLY_ARGS=
 
@@ -225,13 +242,15 @@ z_vgs() {
 
 	for VG in ${FRIENDLY_ARGS}; do
  		info " Activating Volume Group: $VG"
-		/sbin/vgchange --activate y "$VG" || fatal "z_vgs(): Cannot activate volume $VG"
+		/sbin/vgchange --activate y "$VG" || fatal "z_vg(): Cannot activate volume $VG"
 	done
 }
 
 
 # Set up busybox'es symlinks
-/bin/busybox --install -s
+/bin/busybox --install -s || fatal "Cannot install busybox symlinks"
+
+touch /var/log/lastlog || fatal "Cannot create /var/log/lastlog"
 
 ln -s /proc/mounts /etc/mtab || fatal "Cannot link /etc/mtab -> /proc/mounts"
 
@@ -276,20 +295,6 @@ if [ -x /tmp/cleanup.sh ]; then
 	/tmp/cleanup.sh || fatal "Cleanup failed."
 fi
 
-# z_snap=vg0/system-x64_86-gentoo,1G z_root=vg0/system-x64_86-gentoo
-# net.ifnames=1
-# z_ip="eth0,94.154.211.54,255.255.255.0,94.154.211.1"
-# z_dropbear 
-# z_md="md0,sdb1,sdc1,sdd1,sde1"
-# z_md="md1,sdb2,sdc2"
-# z_md="md2,sdd2,sde2"
-# z_md="md3,md1,md2"
-# z_md="md4,sdb3,sdc3"
-# z_md="md5,sdd3,sde3"
-# z_md="md6,md4,md5"
-# z_md="md7,sdb4,sdc4,sdd4,sde4"
-# z_uncrypt="md3,uncrypted-md3"
-
 if [ -d /newroot/lib ]; then
 	KERNEL_RELEASE=$(uname -r)
 	if [ -d "/lib/modules/${KERNEL_RELEASE}" ]; then
@@ -308,9 +313,22 @@ if [ -d /newroot/lib ]; then
 			fi
 
 			if [ "${NEED_TO_COPY}" = "yes" ]; then
-				echo "Re-mounting the /newroot filesystem as RW to copy modules..."
-				mount -o remount,rw /newroot
-				/bin/sh
+				NEWROOT_MOUNT_OPTS=$(grep /newroot /proc/mounts | cut -d' ' -f4)
+				if [ $? -ne 0 ]; then
+					fatal "Cannot obtain mount options of /newroot"
+				fi
+				info "Re-mounting the /newroot filesystem as RW to copy modules..."
+				mount -o remount,rw /newroot || fatal "Cannot re-mount /newroot as RW"
+				if [ ! -d /newroot/lib/modules ]; then
+					mkdir /newroot/lib/modules || fatal "Cannot create /newroot/lib/modules directory"
+				fi
+				cp -a "/lib/modules/${KERNEL_RELEASE}" /newroot/lib/modules/
+				info "Modules ${KERNEL_RELEASE} were copied into /newroot/lib/modules"
+
+				info "Re-mounting the /newroot filesystem with original options '${NEWROOT_MOUNT_OPTS}' ..."
+				mount -o "remount,${NEWROOT_MOUNT_OPTS}" /newroot || fatal "Cannot re-mount /newroot as ${NEWROOT_MOUNT_OPTS}"
+
+				sleep 3
 			else
 				info "Skip modules syncing. Looks like modules are same in initramfs and rootfs"
 			fi
@@ -325,13 +343,13 @@ fi
 echo 1 > /proc/sys/kernel/printk
 
 # Clean up.
-umount -n /run
-umount -n /sys
-umount -n /dev
+umount -n /sys || fatal "Cannot umount /sys"
+umount -n /dev/pts || fatal "Cannot umount /dev/pts"
+umount -n /dev || fatal "Cannot umount /dev"
 
 echo 1 > /proc/sys/kernel/printk
 
-umount -n /proc
+umount -n /proc || fatal "Cannot umount /proc"
 
 # Boot the real thing.
 exec switch_root /newroot /sbin/init $@

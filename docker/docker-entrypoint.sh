@@ -81,6 +81,7 @@ function build_initramfs() {
 	cat "/data/usr/src/initramfs/initramfs_list" >> "${CPIO_LIST}"
 	echo >> "${CPIO_LIST}"
 	echo "file /etc/group /support/misc/group 644 0 0" >> "${CPIO_LIST}"
+	echo "file /etc/mdadm.conf /support/misc/mdadm.conf 644 0 0" >> "${CPIO_LIST}"
 	echo "file /etc/nsswitch.conf /support/misc/nsswitch.conf 644 0 0" >> "${CPIO_LIST}"
 	echo "file /etc/passwd /support/misc/passwd 644 0 0" >> "${CPIO_LIST}"
 	echo "file /init /data/usr/src/initramfs/init 755 0 0" >> "${CPIO_LIST}"
@@ -131,6 +132,9 @@ function build_initramfs() {
 	#exec /bin/busybox sh
 }
 
+if [ -z "$1" ]; then
+	exec /bin/busybox sh
+fi
 
 case "$1" in
 	config)
@@ -153,6 +157,6 @@ case "$1" in
 		echo "	Available quick commands: 'config', 'kernel', 'initramfs' and 'all'" >&2
 		echo >&2
 		echo >&2
-		exec /bin/bash $*
+		exec /bin/busybox sh -c "$*"
 		;;
 esac

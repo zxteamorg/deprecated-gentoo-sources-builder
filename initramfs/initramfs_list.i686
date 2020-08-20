@@ -13,10 +13,12 @@ dir /mnt/root          755 0 0
 dir /proc              755 0 0
 dir /root              700 0 0
 dir /run               755 0 0
+dir /run/cryptsetup    755 0 0
 dir /sbin              755 0 0
 dir /sys               755 0 0
 dir /tmp               755 0 0
 dir /var               755 0 0
+dir /var/log           755 0 0
 dir /usr               755 0 0
 dir /usr/bin           755 0 0
 dir /usr/sbin          755 0 0
@@ -27,14 +29,24 @@ file /bin/busybox /bin/busybox 755 0 0
 
 # common libs
 file    /lib/ld-linux.so.2                      /lib/ld-linux.so.2                  755 0 0
-file    /lib/libpthread.so.0                    /lib/libpthread.so.0                755 0 0
-file    /lib/libc.so.6                          /lib/libc.so.6                      755 0 0
-file    /lib/librt.so.1                         /lib/librt.so.1                     755 0 0
-file    /lib/libdl.so.2                         /lib/libdl.so.2                     755 0 0
-file    /lib/libz.so.1                          /lib/libz.so.1                      755 0 0
 file    /lib/libblkid.so.1.1.0                  /lib/libblkid.so.1.1.0              755 0 0
 slink   /lib/libblkid.so.1                      libblkid.so.1.1.0                   755 0 0
+file    /lib/libc.so.6                          /lib/libc.so.6                      755 0 0
+file    /lib/libdl.so.2                         /lib/libdl.so.2                     755 0 0
 file    /lib/libkmod.so.2                       /lib/libkmod.so.2                   755 0 0
+file    /lib/libnss_compat-2.30.so              /lib/libnss_compat-2.30.so          755 0 0
+slink   /lib/libnss_compat.so.2                 /lib/libnss_compat-2.30.so          755 0 0
+file    /lib/libnss_db-2.30.so                  /lib/libnss_db-2.30.so              755 0 0
+slink   /lib/libnss_db.so.2                     /lib/libnss_db-2.30.so              755 0 0
+file    /lib/libnss_dns-2.30.so                 /lib/libnss_dns-2.30.so             755 0 0
+slink   /lib/libnss_dns.so.2                    /lib/libnss_dns-2.30.so             755 0 0
+file    /lib/libnss_files-2.30.so               /lib/libnss_files-2.30.so           755 0 0
+slink   /lib/libnss_files.so.2                  /lib/libnss_files-2.30.so           755 0 0
+file    /lib/libnss_hesiod-2.30.so              /lib/libnss_hesiod-2.30.so          755 0 0
+slink   /lib/libnss_hesiod.so.2                 /lib/libnss_hesiod-2.30.so          755 0 0
+file    /lib/libpthread.so.0                    /lib/libpthread.so.0                755 0 0
+file    /lib/librt.so.1                         /lib/librt.so.1                     755 0 0
+file    /lib/libz.so.1                          /lib/libz.so.1                      755 0 0
 
 # libraries required by /sbin/fsck.ext4 and /sbin/fsck
 file    /lib/libext2fs.so.2                     /lib/libext2fs.so.2                 755 0 0
@@ -63,16 +75,19 @@ file    /etc/lvm/lvm.conf                       /etc/lvm/lvm.conf               
 file    /sbin/dmsetup                           /sbin/dmsetup.static                755 0 0
 file    /sbin/lvm                               /sbin/lvm.static                    755 0 0
 slink   /sbin/lvcreate                          /sbin/lvm                           755 0 0
+slink   /sbin/lvdisplay                         /sbin/lvm                           755 0 0
 slink   /sbin/lvextend                          /sbin/lvm                           755 0 0
 slink   /sbin/lvremove                          /sbin/lvm                           755 0 0
 slink   /sbin/lvresize                          /sbin/lvm                           755 0 0
 slink   /sbin/lvs                               /sbin/lvm                           755 0 0
 slink   /sbin/pvcreate                          /sbin/lvm                           755 0 0
+slink   /sbin/pvdisplay                         /sbin/lvm                           755 0 0
 slink   /sbin/pvresize                          /sbin/lvm                           755 0 0
 file    /sbin/udevd                             /sbin/udevd                         755 0 0
 slink   /sbin/vgchange                          /sbin/lvm                           755 0 0
 slink   /sbin/vgcreate                          /sbin/lvm                           755 0 0
 slink   /sbin/vgdisplay                         /sbin/lvm                           755 0 0
+slink   /sbin/vgextend                          /sbin/lvm                           755 0 0
 slink   /sbin/vgscan                            /sbin/lvm                           755 0 0
 
 # Tool for running RAID systems

@@ -22,7 +22,7 @@ fatal() {
 
 
 uncrypt() {
-	[ -n "$1" ] || fatal "Wrong argument error. Example: \"sda2,uncrypted-sda2[,allow-discards][;vg0/luks-root,uncrypted-root[,allow-discards]]\" (no /dev prefix)"
+	[ -n "$1" ] || fatal "Wrong argument error. Example: \"sda2,uncrypted-sda2[,discard][;vg0/luks-root,uncrypted-root[,discard]]\" (no /dev prefix)"
 
 	FRIENDLY_ARGS=$(echo "$1" | sed -r 's/;/ /g')
 
@@ -37,7 +37,7 @@ uncrypt() {
 		
 		for ARG in `echo "$UNCRYPT_TAGET" | cut -d, -f3- | sed -r 's/,/ /g'`; do
 			case "${ARG}" in
-				allow-discards)
+				discard)
 					CRYPTSETUP_OPTS="${CRYPTSETUP_OPTS} --allow-discards"
 					;;
 				*)
@@ -55,10 +55,10 @@ uncrypt() {
 		echo "Uncrypt ${DEV} => ${UNCRYPTED_DEV}"
 
 		# Load previous PASSKEYS
-		[ -f "/tmp/PASSKEYS" ] && PASSKEYS=$(cat /tmp/PASSKEYS)
-		if [ -n "${PASSKEYS}" ]; then
-			PASSKEYS="${PASSKEYS} "
-		fi
+		# [ -f "/tmp/PASSKEYS" ] && PASSKEYS=$(cat /tmp/PASSKEYS)
+		# if [ -n "${PASSKEYS}" ]; then
+		# 	PASSKEYS="${PASSKEYS} "
+		# fi
 		local SHOW_MSG=1
 		local FORCE_FIRST_ITERATION=0
 		[ ${#PASSKEYS} -gt 0 ] && FORCE_FIRST_ITERATION=1
@@ -86,7 +86,7 @@ uncrypt() {
 					if [ ${SUCCESS_LUKSOPEN} -eq 1 ]; then
 						echo "	OK"
 						# Save valid PASSKEYS to /tmp/PASSKEYS
-						echo "${PASSKEYS}" > /tmp/PASSKEYS
+						#echo "${PASSKEYS}" > /tmp/PASSKEYS
 					else
 						echo "	FAILED"
 					fi

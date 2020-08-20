@@ -1,4 +1,4 @@
-ARG GENTOO_DOCKER_BUILD_DATE=20200812
+ARG GENTOO_DOCKER_BUILD_DATE=20200820
 
 
 # Use the empty image with the portage tree as the first stage
@@ -33,7 +33,8 @@ RUN \
 		sys-kernel/linux-firmware
 
 RUN \
-	ACCEPT_KEYWORDS="~amd64" USE="minimal -pam static static-libs -syslog" \
+	ACCEPT_KEYWORDS="~amd64" \
+	USE="minimal -pam -shadow static static-libs -syslog" \
 	emerge --quiet --oneshot \
 		dropbear
 
@@ -59,11 +60,11 @@ COPY initramfs/uncrypt                              /support/initramfs/uncrypt
 COPY BANNER /support/BANNER
 COPY misc /support/misc
 RUN echo "${KERNEL_VERSION}" > /support/KERNEL_VERSION
-COPY docker/docker-entrypoint.sh /support/docker-entrypoint.sh
 
 RUN rm -rf /var/db
 RUN rm -rf /usr/share/man
 
-VOLUME [ "/data" ]
+COPY docker/docker-entrypoint.sh /support/docker-entrypoint.sh
 
+VOLUME [ "/data" ]
 ENTRYPOINT [ "/support/docker-entrypoint.sh" ]

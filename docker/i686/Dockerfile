@@ -44,13 +44,23 @@ RUN cd /usr/src/linux && make -C usr/ gen_init_cpio && chmod +x usr/gen_init_cpi
 
 RUN sed -i 's/use_lvmetad = 1/use_lvmetad = 0/g' /etc/lvm/lvm.conf
 
+COPY BANNER /support/BANNER
+COPY misc /support/misc
+RUN echo "${KERNEL_VERSION}" > /support/KERNEL_VERSION
+
+RUN rm -rf /var/db
+RUN rm -rf /usr/share/man
+
 # === Sites ==============================================================
 
 ## zxteam-bootsrv
-COPY sites/zxteam-bootsrv-asrock-pv530a-itx/i686/config-${KERNEL_VERSION}-gentoo /support/zxteam-bootsrv-asrock-pv530a-itx/config-${KERNEL_VERSION}-gentoo
+COPY sites/asrock-pv530a-itx/i686/config-${KERNEL_VERSION}-gentoo              /support/asrock-pv530a-itx/config-${KERNEL_VERSION}-gentoo
 
-## zxteam-desktop-hp64xx
-#COPY sites/zxteam-desktop-hp64xx/i686/config-${KERNEL_VERSION}-gentoo           /support/zxteam-desktop-hp64xx/config-${KERNEL_VERSION}-gentoo
+## hp64xx
+#COPY sites/hp64xx/i686/config-${KERNEL_VERSION}-gentoo                         /support/hp64xx/config-${KERNEL_VERSION}-gentoo
+
+## dellcs24sc
+#COPY sites/dellcs24sc/i686/config-${KERNEL_VERSION}-gentoo                     /support/dellcs24sc/config-${KERNEL_VERSION}-gentoo
 
 # ========================================================================
 
@@ -59,16 +69,11 @@ COPY initramfs/init                                 /support/initramfs/init
 COPY initramfs/initramfs_list.i686                  /support/initramfs/initramfs_list
 COPY initramfs/uncrypt                              /support/initramfs/uncrypt
 
-
-COPY BANNER /support/BANNER
-COPY misc /support/misc
-RUN echo "${KERNEL_VERSION}" > /support/KERNEL_VERSION
-
-RUN rm -rf /var/db
-RUN rm -rf /usr/share/man
-
 COPY docker/docker-entrypoint.sh /support/docker-entrypoint.sh
 
-VOLUME [ "/data" ]
+VOLUME [ "/data/build", "/data/cache" ]
+
+ENV SITE=
+ENV CLEAN_INITRAMFS=no
 
 ENTRYPOINT [ "/support/docker-entrypoint.sh" ]

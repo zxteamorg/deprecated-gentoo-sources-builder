@@ -26,37 +26,30 @@ TBD
 ## Dev notes
 
 ```
+# Define arch
 #export ARCH=i686
 export ARCH=amd64
+
+# Build image
+docker build --tag "zxteamorg/gentoo-sources-builder-${ARCH}" --build-arg KERNEL_VERSION=5.4.48 --file docker/amd64/Dockerfile .
+
+# Define SITE
 #export SITE=asrock-pv530a-itx
 export SITE=dellcs24sc
 #export SITE=hp64xx
-docker build --tag "zxteamorg/gentoo-sources-builder-${ARCH}" --build-arg KERNEL_VERSION=5.4.48 --file docker/amd64/Dockerfile .
+
+# Create cache volume
 docker volume create "${SITE}-cache"
+
+
+# Make Kernel
 docker run --rm --interactive --tty --volume "${PWD}/.${SITE}":/data/build --volume "${SITE}-cache":/data/cache --env SITE "zxteamorg/gentoo-sources-builder-${ARCH}" kernel
+
+# Make initramfs
 docker run --rm --interactive --tty --volume "${PWD}/.${SITE}":/data/build --volume "${SITE}-cache":/data/cache --env SITE --env CLEAN_INITRAMFS=y "zxteamorg/gentoo-sources-builder-${ARCH}" initramfs
-```
 
-### Debug initramfs of `hp64xx` site
 
-```
-docker build --tag zxteamorg/gentoo-sources-builder-amd64 --build-arg KERNEL_VERSION=5.4.48 --file docker/amd64/Dockerfile . && \
-rm -rf $PWD/.hp64xx/usr/src/initramfs && \
-docker run --rm --interactive --tty --env SITE=hp64xx --volume $PWD/.hp64xx:/data zxteamorg/gentoo-sources-builder-amd64 initramfs
-```
-
-### Debug initramfs of `asrock-pv530a-itx` site
-
-```
-docker build --tag zxteamorg/gentoo-sources-builder-i686 --build-arg KERNEL_VERSION=5.4.48 --file docker/i686/Dockerfile . && \
-rm -rf $PWD/.v/usr/src/initramfs && \
-docker run --rm --interactive --tty --env SITE=asrock-pv530a-itx --volume $PWD/.asrock-pv530a-itx:/data zxteamorg/gentoo-sources-builder-i686 initramfs
-```
-
-### Debug initramfs of `dellcs24sc` site
-
-```
-docker build --tag zxteamorg/gentoo-sources-builder-amd64 --build-arg KERNEL_VERSION=5.4.48 --file docker/amd64/Dockerfile . && \
-rm -rf $PWD/.dellcs24sc/usr/src/initramfs && \
-docker run --rm --interactive --tty --env SITE=dellcs24sc --volume $PWD/.dellcs24sc:/data zxteamorg/gentoo-sources-builder-amd64 initramfs
+# Cleanup
+docker volume rm "${SITE}-cache"
+docker image rm "zxteamorg/gentoo-sources-builder-${ARCH}"
 ```

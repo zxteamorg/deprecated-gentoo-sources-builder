@@ -182,7 +182,7 @@ z_shell() {
 }
 
 z_snap() {
-	[ -n "$1" ] || fatal "z_snap(): Wrong argument error. Example: z_snap=\"vg0/luks-root,10G;vg0/luks-home,250M\""
+	[ -n "$1" ] || fatal "z_snap(): Wrong argument error. Example: z_snap=\"vg0/luks-root,10G[,force];vg0/luks-home,250M\""
 
  	local FRIENDLY_ARGS=
 
@@ -193,22 +193,28 @@ z_snap() {
 		local LV_SIZE=
 		local LV_SNAPNAME=
 		local LV_SNAPDEV=
+		local FORCE=
 
 		LV_DEV=/dev/$(echo "${SNAP}" | cut -d, -f1)
 		LV_SIZE=$(echo "${SNAP}" | cut -d, -f2)
 		LV_SNAPNAME=$(basename "${LV_DEV}")-bootsnap
 		LV_SNAPDEV=$(dirname "${LV_DEV}")/${LV_SNAPNAME}
+		FORCE=$(echo "${SNAP}" | cut -d, -f3)
 
 		if [ -b "${LV_SNAPDEV}" ]; then
-			info "	Removing previous snapshot"
-			local LV_ORIGIN=
-			LV_ORIGIN=$(/sbin/lvs "${LV_SNAPDEV}" | tail -n 1 | awk '{print $5}')
-			[ -z "${LV_ORIGIN}" ] && fatal "Looks like ${LV_SNAPDEV} is not a snapshot(has not Pool Origin)! Something wrong in ZXInit configuration! Please check!"
-			/sbin/lvremove -f "${LV_SNAPDEV}" || fatal "Cannot remove LV snapshot ${LV_SNAPDEV}"
+			if [ "${FORCE}" == "force" ]; then
+				info "	Removing previous snapshot"
+				local LV_ORIGIN=
+				LV_ORIGIN=$(/sbin/lvs "${LV_SNAPDEV}" | tail -n 1 | awk '{print $5}')
+				[ -z "${LV_ORIGIN}" ] && fatal "Looks like ${LV_SNAPDEV} is not a snapshot(has not Pool Origin)! Something wrong in ZXInit configuration! Please check!"
+				/sbin/lvremove -f "${LV_SNAPDEV}" || fatal "Cannot remove LV snapshot ${LV_SNAPDEV}"
+			else
+				warn "	Skip creation of boot snaphot due it already exist." 
+			fi
+		else
+			info "	Create LVM snapshot ${LV_SNAPNAME} (size: ${LV_SIZE}) for volume ${LV_DEV}"
+			/sbin/lvcreate --snapshot --permission r --size "${LV_SIZE}" --name "${LV_SNAPNAME}" "${LV_DEV}" || fatal "Cannot create LV snapshot."
 		fi
-
-		info "	Create LVM snapshot ${LV_SNAPNAME} (size: ${LV_SIZE}) for volume ${LV_DEV}"
-		/sbin/lvcreate --snapshot --permission r --size "${LV_SIZE}" --name "${LV_SNAPNAME}" "${LV_DEV}" || fatal "Cannot create LV snapshot."
 	done
 }
 

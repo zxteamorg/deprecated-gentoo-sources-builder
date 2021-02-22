@@ -10,6 +10,7 @@ dir /lib               755 0 0
 dir /lib/modules       755 0 0
 dir /mnt               755 0 0
 dir /mnt/root          755 0 0
+dir /newroot           755 0 0
 dir /proc              755 0 0
 dir /root              700 0 0
 dir /run               755 0 0

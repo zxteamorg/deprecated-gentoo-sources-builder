@@ -34,11 +34,13 @@ function config_kernel() {
 		echo "Using SITE: ${SITE}"
 
 		if [ ! -f "/data/cache/usr/src/linux-${KERNEL_VERSION}-gentoo/.config" ]; then
-			if [ -f "/support/${SITE}/config-${KERNEL_VERSION}-gentoo" ]; then
+
+			LATEST_SITE_KERNEL_CONFIG_FILE=$(ls --reverse "/support/sites/${SITE}"/config-*-gentoo| head -1)
+			if [ -f "${LATEST_SITE_KERNEL_CONFIG_FILE}" ]; then
 				echo "Initialize kernel configuration..."
-				cp "/support/${SITE}/config-${KERNEL_VERSION}-gentoo" "/data/cache/usr/src/linux-${KERNEL_VERSION}-gentoo/.config"
+				cp "${LATEST_SITE_KERNEL_CONFIG_FILE}" "/data/cache/usr/src/linux-${KERNEL_VERSION}-gentoo/.config"
 			else
-				echo "Cannot initialize kernel configuration due a file /support/${SITE}/config-${KERNEL_VERSION}-gentoo not found."
+				echo "Cannot initialize kernel configuration due a file /support/sites/${SITE}/config-${KERNEL_VERSION}-gentoo not found."
 			fi
 		fi
 	else
@@ -46,7 +48,9 @@ function config_kernel() {
 	fi
 
 	cd /usr/src/linux
-	KBUILD_OUTPUT="/data/cache/usr/src/linux-${KERNEL_VERSION}-gentoo" make oldconfig
+	if [ -f ".config" ]; then
+		KBUILD_OUTPUT="/data/cache/usr/src/linux-${KERNEL_VERSION}-gentoo" make oldconfig
+	fi
 	KBUILD_OUTPUT="/data/cache/usr/src/linux-${KERNEL_VERSION}-gentoo" make menuconfig
 }
 

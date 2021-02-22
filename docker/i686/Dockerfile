@@ -1,4 +1,4 @@
-ARG GENTOO_DOCKER_BUILD_DATE=20200818
+ARG GENTOO_DOCKER_BUILD_DATE=20210214
 
 
 # Use the empty image with the portage tree as the first stage
@@ -6,7 +6,7 @@ FROM gentoo/portage:${GENTOO_DOCKER_BUILD_DATE} AS portage
 
 
 # Target container with Gentoo Linux + necessary tools to build kernel and initramfs
-FROM gentoo/stage3-x86:${GENTOO_DOCKER_BUILD_DATE} as stage
+FROM --platform=386 gentoo/stage3 as stage
 ARG KERNEL_VERSION=
 
 # Copy the portage tree into the current stage
@@ -52,16 +52,7 @@ RUN rm -rf /var/db
 RUN rm -rf /usr/share/man
 
 # === Sites ==============================================================
-
-## zxteam-bootsrv
-COPY sites/asrock-pv530a-itx/i686/config-${KERNEL_VERSION}-gentoo              /support/asrock-pv530a-itx/config-${KERNEL_VERSION}-gentoo
-
-## hp64xx
-#COPY sites/hp64xx/i686/config-${KERNEL_VERSION}-gentoo                         /support/hp64xx/config-${KERNEL_VERSION}-gentoo
-
-## dellcs24sc
-#COPY sites/dellcs24sc/i686/config-${KERNEL_VERSION}-gentoo                     /support/dellcs24sc/config-${KERNEL_VERSION}-gentoo
-
+COPY sites/i686/                                    /support/sites/
 # ========================================================================
 
 # Initramfs

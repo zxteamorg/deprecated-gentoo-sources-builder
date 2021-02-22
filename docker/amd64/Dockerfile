@@ -1,4 +1,4 @@
-ARG GENTOO_DOCKER_BUILD_DATE=20200820
+ARG GENTOO_DOCKER_BUILD_DATE=20210214
 
 
 # Use the empty image with the portage tree as the first stage
@@ -6,7 +6,7 @@ FROM gentoo/portage:${GENTOO_DOCKER_BUILD_DATE} AS portage
 
 
 # Target container with Gentoo Linux + necessary tools to build kernel and initramfs
-FROM gentoo/stage3-amd64:${GENTOO_DOCKER_BUILD_DATE} as stage
+FROM --platform=amd64 gentoo/stage3@sha256:d9542336dfa1670c1f34898972ec3a84c88eedc77f2b5ca78ac4a5b46652e81b as stage
 ARG KERNEL_VERSION=
 
 # Copy the portage tree into the current stage
@@ -52,13 +52,7 @@ RUN rm -rf /var/db
 RUN rm -rf /usr/share/man
 
 # === Sites ==============================================================
-
-## hp64xx
-COPY sites/hp64xx/amd64/config-${KERNEL_VERSION}-gentoo                        /support/hp64xx/config-${KERNEL_VERSION}-gentoo
-
-# dellcs24sc
-COPY sites/dellcs24sc/amd64/config-${KERNEL_VERSION}-gentoo                    /support/dellcs24sc/config-${KERNEL_VERSION}-gentoo
-
+COPY sites/amd64/                                   /support/sites/
 # ========================================================================
 
 # Initramfs

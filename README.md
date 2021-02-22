@@ -31,16 +31,16 @@ TBD
 export ARCH=amd64
 
 # Build image
-docker build --tag "zxteamorg/gentoo-sources-builder-${ARCH}" --build-arg KERNEL_VERSION=5.4.48 --file docker/amd64/Dockerfile .
+docker build --tag "zxteamorg/gentoo-sources-builder-${ARCH}" --build-arg KERNEL_VERSION=5.4.97 --file "docker/${ARCH}/Dockerfile" .
 
 # Define SITE
-#export SITE=asrock-pv530a-itx
+#export SITE=asrockpv530aitx
+#export SITE=axx99v102a
 export SITE=dellcs24sc
 #export SITE=hp64xx
 
 # Create cache volume
 docker volume create "${SITE}-cache"
-
 
 # Make Kernel
 docker run --rm --interactive --tty --volume "${PWD}/.${SITE}":/data/build --volume "${SITE}-cache":/data/cache --env SITE "zxteamorg/gentoo-sources-builder-${ARCH}" kernel

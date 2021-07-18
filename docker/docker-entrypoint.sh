@@ -35,9 +35,9 @@ function config_kernel() {
 
 		if [ ! -f "/data/cache/usr/src/linux-${KERNEL_VERSION}-gentoo/.config" ]; then
 
-			LATEST_SITE_KERNEL_CONFIG_FILE=$(ls --reverse "/support/sites/${SITE}"/config-*-gentoo| head -1)
+			LATEST_SITE_KERNEL_CONFIG_FILE=$(ls --reverse "/support/sites/${SITE}"/config-*-gentoo | head -1)
 			if [ -f "${LATEST_SITE_KERNEL_CONFIG_FILE}" ]; then
-				echo "Initialize kernel configuration..."
+				echo "Initialize kernel configuration from ${LATEST_SITE_KERNEL_CONFIG_FILE} ..."
 				cp "${LATEST_SITE_KERNEL_CONFIG_FILE}" "/data/cache/usr/src/linux-${KERNEL_VERSION}-gentoo/.config"
 			else
 				echo "Cannot initialize kernel configuration due a file /support/sites/${SITE}/config-${KERNEL_VERSION}-gentoo not found."
@@ -142,7 +142,7 @@ function build_initramfs() {
 	fi
 
 	echo "Generating initramfs file ${INITRAMFS_FILE}.cpio.gz..."
-	./usr/gen_initramfs_list.sh -o "/data/build/boot/${INITRAMFS_FILE}.cpio.gz" "${CPIO_LIST}"
+	./usr/gen_initramfs.sh -o "/data/build/boot/${INITRAMFS_FILE}.cpio.gz" "${CPIO_LIST}"
 	ln -sf "${INITRAMFS_FILE}.cpio.gz" /data/build/boot/initramfs.cpio.gz
 
 	# # Debugging

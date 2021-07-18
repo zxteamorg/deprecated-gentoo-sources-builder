@@ -25,31 +25,47 @@ TBD
 
 ## Dev notes
 
+### Prepare builder images
+```shell
+docker build --platform=i386 --tag "zxteamorg/gentoo-sources-builder-i686" --build-arg KERNEL_VERSION=5.10.49-r1 --file "docker/i686/Dockerfile" .
+
+docker build --platform=amd64 --tag "zxteamorg/gentoo-sources-builder-amd64" --build-arg KERNEL_VERSION=5.10.49-r1 --file "docker/amd64/Dockerfile" .
 ```
-# Define arch
+
+```shell
+# Select arch
 #export ARCH=i686
 export ARCH=amd64
 
-# Build image
-docker build --tag "zxteamorg/gentoo-sources-builder-${ARCH}" --build-arg KERNEL_VERSION=5.4.97 --file "docker/${ARCH}/Dockerfile" .
-
-# Define SITE
+# Select SITE
 #export SITE=asrockpv530aitx
 #export SITE=axx99v102a
-export SITE=dellcs24sc
+#export SITE=dellcs24sc
+export SITE=digitaloceanvm
 #export SITE=hp64xx
+#export SITE=virtualboxvm
 
 # Create cache volume
-docker volume create "${SITE}-cache"
+docker volume create "${ARCH}-${SITE}-cache"
 
 # Make Kernel
-docker run --rm --interactive --tty --volume "${PWD}/.${SITE}":/data/build --volume "${SITE}-cache":/data/cache --env SITE "zxteamorg/gentoo-sources-builder-${ARCH}" kernel
+docker run --rm --interactive --tty \
+  --mount type=bind,source="${PWD}/.${SITE}",target=/data/build \
+  --volume "${ARCH}-${SITE}-cache":/data/cache \
+  --env SITE \
+  "zxteamorg/gentoo-sources-builder-${ARCH}" \
+    kernel
 
 # Make initramfs
-docker run --rm --interactive --tty --volume "${PWD}/.${SITE}":/data/build --volume "${SITE}-cache":/data/cache --env SITE --env CLEAN_INITRAMFS=y "zxteamorg/gentoo-sources-builder-${ARCH}" initramfs
+docker run --rm --interactive --tty \
+  --mount type=bind,source="${PWD}/.${SITE}",target=/data/build \
+  --volume "${ARCH}-${SITE}-cache":/data/cache \
+  --env SITE \
+  --env CLEAN_INITRAMFS=y \
+  "zxteamorg/gentoo-sources-builder-${ARCH}" \
+    initramfs
 
 
 # Cleanup
-docker volume rm "${SITE}-cache"
-docker image rm "zxteamorg/gentoo-sources-builder-${ARCH}"
+docker volume rm "${ARCH}-${SITE}-cache"
 ```

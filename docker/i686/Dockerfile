@@ -1,12 +1,12 @@
-ARG GENTOO_DOCKER_BUILD_DATE=20210214
-
+ARG GENTOO_STAGE3_IMAGE_DIGEST=sha256:e37a27ee33d1b8978bcf225a5d60f86010082399a46944040700f9a945eb549a
+ARG GENTOO_PORTAGE_IMAGE_DIGEST=sha256:8b2f2db254273608168edefcf31060ae4d592f17d01fe36364d9ac7665710cd9
 
 # Use the empty image with the portage tree as the first stage
-FROM gentoo/portage:${GENTOO_DOCKER_BUILD_DATE} AS portage
+FROM gentoo/portage@${GENTOO_PORTAGE_IMAGE_DIGEST} AS portage
 
 
 # Target container with Gentoo Linux + necessary tools to build kernel and initramfs
-FROM --platform=386 gentoo/stage3 as stage
+FROM --platform=386 gentoo/stage3@${GENTOO_STAGE3_IMAGE_DIGEST} as stage
 ARG KERNEL_VERSION=
 
 # Copy the portage tree into the current stage

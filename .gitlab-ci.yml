@@ -1,0 +1,73 @@
+variables:
+  BUILD_IMAGE: docker:stable
+  DOCKER_BUILDKIT: 1
+  KERNEL_VERSION: 5.10.49-r1
+
+image: ${BUILD_IMAGE}
+
+stages:
+  - build
+
+i686-builder:
+  stage: build
+  tags:
+    - docker-builder
+  only:
+    - master
+  script:
+    # Build an image
+    - export DOCKER_IMAGE_NAME="${CI_REGISTRY_IMAGE}/i686"
+    - export VERSION_TAG_CURRENT="${CI_COMMIT_REF_SLUG}.${CI_COMMIT_SHORT_SHA}"
+    - export VERSION_TAG_LATEST="${CI_COMMIT_REF_SLUG}"
+    - docker build ${DOCKER_ARGS}
+      --platform=i386
+      --file "docker/i686/Dockerfile"
+      --tag "image-${CI_PROJECT_NAMESPACE}-${CI_PROJECT_NAME}-${CI_JOB_ID}"
+      --build-arg KERNEL_VERSION
+      .
+    # Login to the registry
+    - echo "${CI_REGISTRY_PASSWORD}" | docker login --username "${CI_REGISTRY_USER}" --password-stdin "${CI_REGISTRY}"
+    # Make image tags
+    - docker tag "image-${CI_PROJECT_NAMESPACE}-${CI_PROJECT_NAME}-${CI_JOB_ID}" "${DOCKER_IMAGE_NAME}:${VERSION_TAG_CURRENT}"
+    - docker tag "image-${CI_PROJECT_NAMESPACE}-${CI_PROJECT_NAME}-${CI_JOB_ID}" "${DOCKER_IMAGE_NAME}:${VERSION_TAG_LATEST}"
+    - docker tag "image-${CI_PROJECT_NAMESPACE}-${CI_PROJECT_NAME}-${CI_JOB_ID}" "${DOCKER_IMAGE_NAME}:latest"
+    # Publish tags
+    - docker push "${DOCKER_IMAGE_NAME}:${VERSION_TAG_CURRENT}"
+    - docker push "${DOCKER_IMAGE_NAME}:${VERSION_TAG_LATEST}"
+    - docker push "${DOCKER_IMAGE_NAME}:latest"
+    # Echo results
+    - echo "See README.md for 'docker run' command. The image ${DOCKER_IMAGE_NAME}:${VERSION_TAG_CURRENT}"
+    - echo "See README.md for 'docker run' command. The image ${DOCKER_IMAGE_NAME}:${VERSION_TAG_LATEST}"
+    - echo "See README.md for 'docker run' command. The image ${DOCKER_IMAGE_NAME}:latest"
+
+amd64-builder:
+  stage: build
+  tags:
+    - docker-builder
+  only:
+    - master
+  script:
+    # Build an image
+    - export DOCKER_IMAGE_NAME="${CI_REGISTRY_IMAGE}/amd64"
+    - export VERSION_TAG_CURRENT="${CI_COMMIT_REF_SLUG}.${CI_COMMIT_SHORT_SHA}"
+    - export VERSION_TAG_LATEST="${CI_COMMIT_REF_SLUG}"
+    - docker build ${DOCKER_ARGS}
+      --platform=amd64
+      --file "docker/amd64/Dockerfile"
+      --tag "image-${CI_PROJECT_NAMESPACE}-${CI_PROJECT_NAME}-${CI_JOB_ID}"
+      --build-arg KERNEL_VERSION
+      .
+    # Login to the registry
+    - echo "${CI_REGISTRY_PASSWORD}" | docker login --username "${CI_REGISTRY_USER}" --password-stdin "${CI_REGISTRY}"
+    # Make image tags
+    - docker tag "image-${CI_PROJECT_NAMESPACE}-${CI_PROJECT_NAME}-${CI_JOB_ID}" "${DOCKER_IMAGE_NAME}:${VERSION_TAG_CURRENT}"
+    - docker tag "image-${CI_PROJECT_NAMESPACE}-${CI_PROJECT_NAME}-${CI_JOB_ID}" "${DOCKER_IMAGE_NAME}:${VERSION_TAG_LATEST}"
+    - docker tag "image-${CI_PROJECT_NAMESPACE}-${CI_PROJECT_NAME}-${CI_JOB_ID}" "${DOCKER_IMAGE_NAME}:latest"
+    # Publish tags
+    - docker push "${DOCKER_IMAGE_NAME}:${VERSION_TAG_CURRENT}"
+    - docker push "${DOCKER_IMAGE_NAME}:${VERSION_TAG_LATEST}"
+    - docker push "${DOCKER_IMAGE_NAME}:latest"
+    # Echo results
+    - echo "See README.md for 'docker run' command. The image ${DOCKER_IMAGE_NAME}:${VERSION_TAG_CURRENT}"
+    - echo "See README.md for 'docker run' command. The image ${DOCKER_IMAGE_NAME}:${VERSION_TAG_LATEST}"
+    - echo "See README.md for 'docker run' command. The image ${DOCKER_IMAGE_NAME}:latest"

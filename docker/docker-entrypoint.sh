@@ -25,22 +25,24 @@ fi
 
 
 function config_kernel() {
-	if [ ! -d "/data/cache/usr/src/linux-${KERNEL_VERSION}-gentoo" ]; then
-		echo "Creating kernel build directory /data/cache/usr/src/linux-${KERNEL_VERSION}-gentoo..."
-		mkdir -p "/data/cache/usr/src/linux-${KERNEL_VERSION}-gentoo"
+	KERNEL_SLUG=$(basename $(pwd -LP) | cut -d- -f2-)
+
+	if [ ! -d "/data/cache/usr/src/linux-${KERNEL_SLUG}" ]; then
+		echo "Creating kernel build directory /data/cache/usr/src/linux-${KERNEL_SLUG}..."
+		mkdir -p "/data/cache/usr/src/linux-${KERNEL_SLUG}"
 	fi
 
 	if [ -n "${SITE}" ]; then
 		echo "Using SITE: ${SITE}"
 
-		if [ ! -f "/data/cache/usr/src/linux-${KERNEL_VERSION}-gentoo/.config" ]; then
+		if [ ! -f "/data/cache/usr/src/linux-${KERNEL_SLUG}/.config" ]; then
 
 			LATEST_SITE_KERNEL_CONFIG_FILE=$(ls --reverse "/support/sites/${SITE}"/config-*-gentoo | head -1)
 			if [ -f "${LATEST_SITE_KERNEL_CONFIG_FILE}" ]; then
 				echo "Initialize kernel configuration from ${LATEST_SITE_KERNEL_CONFIG_FILE} ..."
-				cp "${LATEST_SITE_KERNEL_CONFIG_FILE}" "/data/cache/usr/src/linux-${KERNEL_VERSION}-gentoo/.config"
+				cp "${LATEST_SITE_KERNEL_CONFIG_FILE}" "/data/cache/usr/src/linux-${KERNEL_SLUG}/.config"
 			else
-				echo "Cannot initialize kernel configuration due a file /support/sites/${SITE}/config-${KERNEL_VERSION}-gentoo not found."
+				echo "Cannot initialize kernel configuration due a file /support/sites/${SITE}/config-${KERNEL_SLUG} not found."
 			fi
 		fi
 	else
@@ -49,42 +51,45 @@ function config_kernel() {
 
 	cd /usr/src/linux
 	if [ -f ".config" ]; then
-		KBUILD_OUTPUT="/data/cache/usr/src/linux-${KERNEL_VERSION}-gentoo" make oldconfig
+		KBUILD_OUTPUT="/data/cache/usr/src/linux-${KERNEL_SLUG}" make oldconfig
 	fi
-	KBUILD_OUTPUT="/data/cache/usr/src/linux-${KERNEL_VERSION}-gentoo" make menuconfig
+	KBUILD_OUTPUT="/data/cache/usr/src/linux-${KERNEL_SLUG}" make menuconfig
 }
 
 function build_kernel() {
+	KERNEL_SLUG=$(basename $(pwd -LP) | cut -d- -f2-)
+
 	# Check that kernel config has correct settings for initramfs
-	if ! grep 'CONFIG_RD_GZIP=y' "/data/cache/usr/src/linux-${KERNEL_VERSION}-gentoo/.config" >/dev/null 2>&1; then
+	if ! grep 'CONFIG_RD_GZIP=y' "/data/cache/usr/src/linux-${KERNEL_SLUG}/.config" >/dev/null 2>&1; then
 		echo "Kernel configuration must include CONFIG_RD_GZIP=y" >&2
 		exit 1
 	fi
 
-	cd "/usr/src/linux-${KERNEL_VERSION}-gentoo"
-	KBUILD_OUTPUT="/data/cache/usr/src/linux-${KERNEL_VERSION}-gentoo" make "-j$(nproc)"
-	KBUILD_OUTPUT="/data/cache/usr/src/linux-${KERNEL_VERSION}-gentoo" INSTALL_PATH=/data/build/boot make install
-	if grep 'CONFIG_MODULES=y' "/data/cache/usr/src/linux-${KERNEL_VERSION}-gentoo/.config" >/dev/null 2>&1; then
-		KBUILD_OUTPUT="/data/cache/usr/src/linux-${KERNEL_VERSION}-gentoo" INSTALL_MOD_PATH=/data/cache make modules_install
+	cd "/usr/src/linux-${KERNEL_SLUG}"
+
+	KBUILD_OUTPUT="/data/cache/usr/src/linux-${KERNEL_SLUG}" make "-j$(nproc)"
+	KBUILD_OUTPUT="/data/cache/usr/src/linux-${KERNEL_SLUG}" INSTALL_PATH=/data/build/boot make install
+	if grep 'CONFIG_MODULES=y' "/data/cache/usr/src/linux-${KERNEL_SLUG}/.config" >/dev/null 2>&1; then
+		KBUILD_OUTPUT="/data/cache/usr/src/linux-${KERNEL_SLUG}" INSTALL_MOD_PATH=/data/cache make modules_install
 
 		if [ -n "${SITE}" ]; then
 			cd /data/cache
-			tar -czpf "/data/build/lib-modules-${KERNEL_VERSION}-gentoo-${SITE}.tar.gz" lib/modules
+			tar -czpf "/data/build/lib-modules-${KERNEL_SLUG}-${SITE}.tar.gz" lib/modules
 		else
 			cd /data/cache
-			tar -czpf "/data/build/lib-modules-${KERNEL_VERSION}-gentoo.tar.gz" lib/modules
+			tar -czpf "/data/build/lib-modules-${KERNEL_SLUG}.tar.gz" lib/modules
 		fi
 	fi
 	if [ -n "${SITE}" ]; then
-		ln -sf "System.map-${KERNEL_VERSION}-gentoo-${SITE}" /data/build/boot/System.map
-		ln -sf "config-${KERNEL_VERSION}-gentoo-${SITE}" /data/build/boot/config
-		ln -sf "vmlinuz-${KERNEL_VERSION}-gentoo-${SITE}" /data/build/boot/vmlinuz
-		cd /data/cache && tar -czpf "/data/build/lib-modules-${KERNEL_VERSION}-gentoo-${SITE}.tar.gz" lib/modules
+		ln -sf "System.map-${KERNEL_SLUG}-${SITE}" /data/build/boot/System.map
+		ln -sf "config-${KERNEL_SLUG}-${SITE}" /data/build/boot/config
+		ln -sf "vmlinuz-${KERNEL_SLUG}-${SITE}" /data/build/boot/vmlinuz
+		cd /data/cache && tar -czpf "/data/build/lib-modules-${KERNEL_SLUG}-${SITE}.tar.gz" lib/modules
 	else
-		ln -sf "System.map-${KERNEL_VERSION}-gentoo" /data/build/boot/System.map
-		ln -sf "config-${KERNEL_VERSION}-gentoo" /data/build/boot/config
-		ln -sf "vmlinuz-${KERNEL_VERSION}-gentoo" /data/build/boot/vmlinuz
-		cd /data/cache && tar -czpf "/data/build/lib-modules-${KERNEL_VERSION}-gentoo.tar.gz" lib/modules
+		ln -sf "System.map-${KERNEL_SLUG}" /data/build/boot/System.map
+		ln -sf "config-${KERNEL_SLUG}" /data/build/boot/config
+		ln -sf "vmlinuz-${KERNEL_SLUG}" /data/build/boot/vmlinuz
+		cd /data/cache && tar -czpf "/data/build/lib-modules-${KERNEL_SLUG}.tar.gz" lib/modules
 	fi
 }
 
@@ -132,13 +137,13 @@ function build_initramfs() {
 		echo "file $F $F $MODE 0 0" >> "${CPIO_LIST}"
 	done
 
-	cd "/usr/src/linux-${KERNEL_VERSION}-gentoo"
+	cd "/usr/src/linux"
 
 	local INITRAMFS_FILE=
 	if [ -n "${SITE}" ]; then
-		INITRAMFS_FILE="initramfs-${KERNEL_VERSION}-gentoo-${SITE}"
+		INITRAMFS_FILE="initramfs-${KERNEL_SLUG}-${SITE}"
 	else
-		INITRAMFS_FILE="initramfs-${KERNEL_VERSION}-gentoo"
+		INITRAMFS_FILE="initramfs-${KERNEL_SLUG}"
 	fi
 
 	echo "Generating initramfs file ${INITRAMFS_FILE}.cpio.gz..."

@@ -32,6 +32,17 @@ docker build --platform=i386 --tag "zxteamorg/gentoo-sources-builder-i686" --bui
 docker build --platform=amd64 --tag "zxteamorg/gentoo-sources-builder-amd64" --build-arg KERNEL_VERSION=5.10.49-r1 --file "docker/amd64/Dockerfile" .
 ```
 
+Also you may use CI images:
+
+  * docker.registry.zxteam.net/pub/misc/gentoo-sources-builder/i686
+  * docker.registry.zxteam.net/pub/misc/gentoo-sources-builder/i686:master
+  * docker.registry.zxteam.net/pub/misc/gentoo-sources-builder/i686:master.xxxxxx
+  * docker.registry.zxteam.net/pub/misc/gentoo-sources-builder/amd64
+  * docker.registry.zxteam.net/pub/misc/gentoo-sources-builder/amd64:master
+  * docker.registry.zxteam.net/pub/misc/gentoo-sources-builder/amd64:master.xxxxxx
+
+### Use builder image
+
 ```shell
 # Select arch
 #export ARCH=i686
@@ -48,13 +59,19 @@ export SITE=digitaloceanvm
 # Create cache volume
 docker volume create "${ARCH}-${SITE}-cache"
 
+# Create work directory
+mkdir ".${SITE}"
+
 # Make Kernel
 docker run --rm --interactive --tty \
   --mount type=bind,source="${PWD}/.${SITE}",target=/data/build \
   --volume "${ARCH}-${SITE}-cache":/data/cache \
   --env SITE \
-  "zxteamorg/gentoo-sources-builder-${ARCH}" \
+  "docker.registry.zxteam.net/pub/misc/gentoo-sources-builder/${ARCH}" \
     kernel
+
+
+/usr/src/linux-5.10.49-gentoo-r1
 
 # Make initramfs
 docker run --rm --interactive --tty \
@@ -62,7 +79,7 @@ docker run --rm --interactive --tty \
   --volume "${ARCH}-${SITE}-cache":/data/cache \
   --env SITE \
   --env CLEAN_INITRAMFS=y \
-  "zxteamorg/gentoo-sources-builder-${ARCH}" \
+  "docker.registry.zxteam.net/pub/misc/gentoo-sources-builder/${ARCH}" \
     initramfs
 
 

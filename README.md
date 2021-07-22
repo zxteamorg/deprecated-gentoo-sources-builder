@@ -26,13 +26,8 @@ TBD
 ## Dev notes
 
 ### Prepare builder images
-```shell
-docker build --platform=i386 --tag "zxteamorg/gentoo-sources-builder-i686" --build-arg KERNEL_VERSION=5.10.49-r1 --file "docker/i686/Dockerfile" .
 
-docker build --platform=amd64 --tag "zxteamorg/gentoo-sources-builder-amd64" --build-arg KERNEL_VERSION=5.10.49-r1 --file "docker/amd64/Dockerfile" .
-```
-
-Also you may use CI images:
+You may use CI images:
 
   * docker.registry.zxteam.net/pub/misc/gentoo-sources-builder/i686
   * docker.registry.zxteam.net/pub/misc/gentoo-sources-builder/i686:master
@@ -40,6 +35,20 @@ Also you may use CI images:
   * docker.registry.zxteam.net/pub/misc/gentoo-sources-builder/amd64
   * docker.registry.zxteam.net/pub/misc/gentoo-sources-builder/amd64:master
   * docker.registry.zxteam.net/pub/misc/gentoo-sources-builder/amd64:master.xxxxxx
+
+```shell
+docker login docker.registry.zxteam.net
+docker pull docker.registry.zxteam.net/pub/misc/gentoo-sources-builder/i686
+docker pull docker.registry.zxteam.net/pub/misc/gentoo-sources-builder/amd64
+```
+
+Or build locally yourself
+
+```shell
+docker build --platform=i386 --tag "docker.registry.zxteam.net/pub/misc/gentoo-sources-builder/i686" --build-arg KERNEL_VERSION=5.10.49-r1 --file "docker/i686/Dockerfile" .
+
+docker build --platform=amd64 --tag "docker.registry.zxteam.net/pub/misc/gentoo-sources-builder/amd64" --build-arg KERNEL_VERSION=5.10.49-r1 --file "docker/amd64/Dockerfile" .
+```
 
 ### Use builder image
 

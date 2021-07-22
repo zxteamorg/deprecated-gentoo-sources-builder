@@ -23,12 +23,11 @@ if [ ! -d /data/build/boot ]; then
 	mkdir /data/build/boot
 fi
 
+cd /usr/src/linux
+KERNEL_SLUG=$(basename $(pwd -LP) | cut -d- -f2-)
+
 
 function config_kernel() {
-	cd /usr/src/linux
-
-	KERNEL_SLUG=$(basename $(pwd -LP) | cut -d- -f2-)
-
 	if [ ! -d "/data/cache/usr/src/linux-${KERNEL_SLUG}" ]; then
 		echo "Creating kernel build directory /data/cache/usr/src/linux-${KERNEL_SLUG}..."
 		mkdir --parents "/data/cache/usr/src/linux-${KERNEL_SLUG}"
@@ -58,10 +57,6 @@ function config_kernel() {
 }
 
 function build_kernel() {
-	cd /usr/src/linux
-
-	KERNEL_SLUG=$(basename $(pwd -LP) | cut -d- -f2-)
-
 	# Check that kernel config has correct settings for initramfs
 	if ! grep 'CONFIG_RD_GZIP=y' "/data/cache/usr/src/linux-${KERNEL_SLUG}/.config" >/dev/null 2>&1; then
 		echo "Kernel configuration must include CONFIG_RD_GZIP=y" >&2

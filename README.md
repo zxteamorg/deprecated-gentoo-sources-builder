@@ -70,9 +70,6 @@ docker run --rm --interactive --tty \
   "docker.registry.zxteam.net/pub/misc/gentoo-sources-builder/${ARCH}" \
     kernel
 
-
-/usr/src/linux-5.10.49-gentoo-r1
-
 # Make initramfs
 docker run --rm --interactive --tty \
   --mount type=bind,source="${PWD}/.${SITE}",target=/data/build \

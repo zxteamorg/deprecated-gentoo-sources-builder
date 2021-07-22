@@ -1,7 +1,7 @@
 variables:
   BUILD_IMAGE: docker:stable
   DOCKER_BUILDKIT: 1
-  KERNEL_VERSION: 5.10.49-r1
+  KERNEL_VERSION: 5.10.52
 
 image: ${BUILD_IMAGE}
 

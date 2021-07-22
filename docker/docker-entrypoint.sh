@@ -25,6 +25,8 @@ fi
 
 
 function config_kernel() {
+	cd /usr/src/linux
+
 	KERNEL_SLUG=$(basename $(pwd -LP) | cut -d- -f2-)
 
 	if [ ! -d "/data/cache/usr/src/linux-${KERNEL_SLUG}" ]; then
@@ -49,7 +51,6 @@ function config_kernel() {
 		echo "Skip config initialization due SITE variable is not set."
 	fi
 
-	cd /usr/src/linux
 	if [ -f ".config" ]; then
 		KBUILD_OUTPUT="/data/cache/usr/src/linux-${KERNEL_SLUG}" make oldconfig
 	fi
@@ -57,6 +58,8 @@ function config_kernel() {
 }
 
 function build_kernel() {
+	cd /usr/src/linux
+
 	KERNEL_SLUG=$(basename $(pwd -LP) | cut -d- -f2-)
 
 	# Check that kernel config has correct settings for initramfs
@@ -64,8 +67,6 @@ function build_kernel() {
 		echo "Kernel configuration must include CONFIG_RD_GZIP=y" >&2
 		exit 1
 	fi
-
-	cd "/usr/src/linux-${KERNEL_SLUG}"
 
 	KBUILD_OUTPUT="/data/cache/usr/src/linux-${KERNEL_SLUG}" make "-j$(nproc)"
 	KBUILD_OUTPUT="/data/cache/usr/src/linux-${KERNEL_SLUG}" INSTALL_PATH=/data/build/boot make install

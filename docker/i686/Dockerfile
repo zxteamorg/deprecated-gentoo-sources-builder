@@ -14,7 +14,9 @@ COPY --from=portage /var/db /var/db
 
 # Install kernel sources
 RUN test -n "${KERNEL_VERSION}" || { echo "KERNEL_VERSION is not set" >&2; exit 1; }
-RUN emerge --quiet =sys-kernel/gentoo-sources-${KERNEL_VERSION}
+RUN \
+	FEATURES="-ipc-sandbox -network-sandbox -pid-sandbox -sandbox -usersandbox" \
+	emerge --quiet =sys-kernel/gentoo-sources-${KERNEL_VERSION}
 
 # We need busybox to embed into initramfs
 # We need cpio to pack initramfs
@@ -35,12 +37,13 @@ RUN \
 RUN \
 	ACCEPT_KEYWORDS="~x86" \
 	USE="minimal -pam -shadow static static-libs -syslog" \
+	FEATURES="-ipc-sandbox -network-sandbox -pid-sandbox -sandbox -usersandbox" \
 	emerge --quiet --oneshot \
 		dropbear
 
 RUN eselect kernel set 1
 
-RUN cd /usr/src/linux && make -C usr/ gen_init_cpio && chmod +x usr/gen_init_cpio usr/gen_initramfs_list.sh
+RUN cd /usr/src/linux && make -C usr/ gen_init_cpio && chmod +x usr/gen_init_cpio usr/gen_initramfs.sh
 
 RUN sed -i 's/use_lvmetad = 1/use_lvmetad = 0/g' /etc/lvm/lvm.conf
 

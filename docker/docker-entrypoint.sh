@@ -15,7 +15,7 @@ fi
 
 if [ ! -d /data/cache/usr/src ]; then
 	echo "Creating directory /data/cache/usr/src..."
-	mkdir -p /data/cache/usr/src
+	mkdir --parents /data/cache/usr/src
 fi
 
 if [ ! -d /data/build/boot ]; then
@@ -31,7 +31,7 @@ function config_kernel() {
 
 	if [ ! -d "/data/cache/usr/src/linux-${KERNEL_SLUG}" ]; then
 		echo "Creating kernel build directory /data/cache/usr/src/linux-${KERNEL_SLUG}..."
-		mkdir -p "/data/cache/usr/src/linux-${KERNEL_SLUG}"
+		mkdir --parents "/data/cache/usr/src/linux-${KERNEL_SLUG}"
 	fi
 
 	if [ -n "${SITE}" ]; then
@@ -70,27 +70,28 @@ function build_kernel() {
 
 	KBUILD_OUTPUT="/data/cache/usr/src/linux-${KERNEL_SLUG}" make "-j$(nproc)"
 	KBUILD_OUTPUT="/data/cache/usr/src/linux-${KERNEL_SLUG}" INSTALL_PATH=/data/build/boot make install
+
 	if grep 'CONFIG_MODULES=y' "/data/cache/usr/src/linux-${KERNEL_SLUG}/.config" >/dev/null 2>&1; then
 		KBUILD_OUTPUT="/data/cache/usr/src/linux-${KERNEL_SLUG}" INSTALL_MOD_PATH=/data/cache make modules_install
 
+		# rm /data/cache/lib/modules/${KERNEL_SLUG}/build
+		# rm /data/cache/lib/modules/${KERNEL_SLUG}/source
+
 		if [ -n "${SITE}" ]; then
-			cd /data/cache
-			tar -czpf "/data/build/lib-modules-${KERNEL_SLUG}-${SITE}.tar.gz" lib/modules
+			cd /data/cache && tar --create --gzip --preserve-permissions --file="/data/build/lib-modules-${KERNEL_SLUG}-${SITE}.tar.gz" lib/modules
 		else
-			cd /data/cache
-			tar -czpf "/data/build/lib-modules-${KERNEL_SLUG}.tar.gz" lib/modules
+			cd /data/cache && tar --create --gzip --preserve-permissions --file="/data/build/lib-modules-${KERNEL_SLUG}.tar.gz" lib/modules
 		fi
 	fi
+
 	if [ -n "${SITE}" ]; then
-		ln -sf "System.map-${KERNEL_SLUG}-${SITE}" /data/build/boot/System.map
-		ln -sf "config-${KERNEL_SLUG}-${SITE}" /data/build/boot/config
-		ln -sf "vmlinuz-${KERNEL_SLUG}-${SITE}" /data/build/boot/vmlinuz
-		cd /data/cache && tar -czpf "/data/build/lib-modules-${KERNEL_SLUG}-${SITE}.tar.gz" lib/modules
+		ln --symbolic --force "System.map-${KERNEL_SLUG}-${SITE}" /data/build/boot/System.map
+		ln --symbolic --force "config-${KERNEL_SLUG}-${SITE}" /data/build/boot/config
+		ln --symbolic --force "vmlinuz-${KERNEL_SLUG}-${SITE}" /data/build/boot/vmlinuz
 	else
-		ln -sf "System.map-${KERNEL_SLUG}" /data/build/boot/System.map
-		ln -sf "config-${KERNEL_SLUG}" /data/build/boot/config
-		ln -sf "vmlinuz-${KERNEL_SLUG}" /data/build/boot/vmlinuz
-		cd /data/cache && tar -czpf "/data/build/lib-modules-${KERNEL_SLUG}.tar.gz" lib/modules
+		ln --symbolic --force "System.map-${KERNEL_SLUG}" /data/build/boot/System.map
+		ln --symbolic --force "config-${KERNEL_SLUG}" /data/build/boot/config
+		ln --symbolic --force "vmlinuz-${KERNEL_SLUG}" /data/build/boot/vmlinuz
 	fi
 }
 
@@ -98,11 +99,11 @@ function build_initramfs() {
 	echo "Building initramfs..."
 
 	if [ -d /data/cache/usr/src/initramfs ]; then
-		rm -rf /data/cache/usr/src/initramfs
+		rm --force --recursive /data/cache/usr/src/initramfs
 	fi
 	if [ -d /support/initramfs ]; then
 		echo "Initialize initramfs configuration..."
-		cp -a /support/initramfs /data/cache/usr/src/initramfs
+		cp --archive /support/initramfs /data/cache/usr/src/initramfs
 	else
 		echo "Cannot initialize initramfs configuration due a directory /support/initramfs not found."
 	fi

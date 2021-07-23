@@ -26,7 +26,8 @@ dir /usr/sbin          755 0 0
 dir /usr/share         755 0 0
 
 # busybox
-file /bin/busybox /bin/busybox 755 0 0
+file    /bin/busybox                           /bin/busybox                         755 0 0
+file    /usr/share/udhcpc/default.script       /usr/share/udhcpc/default.script     755 0 0
 
 # common libs
 file    /lib/ld-linux.so.2                      /lib/ld-linux.so.2                  755 0 0

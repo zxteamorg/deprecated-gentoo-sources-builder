@@ -36,6 +36,18 @@ fatal() {
 	exec /bin/busybox sh
 }
 
+z_dchp() {
+	[ -n "$1" ] || fatal "z_fsck(): Wrong argument error. Example: z_dchp=\"eth0;eth1\""
+
+	local FRIENDLY_ARGS=
+
+	FRIENDLY_ARGS=$(echo "$1" | sed -r 's/;/ /g')
+
+	for DEV in ${FRIENDLY_ARGS}; do
+		/sbin/ip link set up "${DEV}" || fatal "Failure set UP state for device ${DEV}."
+		/sbin/udhcpc -i "${DEV}" -n || fatal "Failure obtain lease for device ${DEV}."
+	done
+}
 
 z_fsck() {
 	[ -n "$1" ] || fatal "z_fsck(): Wrong argument error. Example: z_fsck=\"vg0/system,ext4;vg0/data,ext4\" (no /dev prefix)"
@@ -50,7 +62,7 @@ z_fsck() {
 		DEV=$(echo "${CHECK}" | cut -d, -f1)
 		FS=$(echo "${CHECK}" | cut -d, -f2)
 		info "Force check file system ${FS} on /dev/${DEV}"
-		/sbin/fsck -f -p -t "${FS}" -f "/dev/${DEV}" || warn "z_fsck(): Cannot check filesystem on /dev/${DEV} (${FS})."
+		/sbin/fsck -f -p -t "${FS}" -f "/dev/${DEV}" || warn "z_fsck(): Failure check filesystem on /dev/${DEV} (${FS})."
 	done
 }
 
@@ -109,7 +121,7 @@ z_ip() {
 		esac
 
 		info "Set up IP address: $IP $MASK for dev $DEV"
-		ifconfig "$DEV" "$IP" netmask "$MASK" || fatal "Cannot set IP address ${IP_WITH_MASK}."
+		ifconfig "$DEV" "$IP" netmask "$MASK" || fatal "Failure set IP address ${IP_WITH_MASK}."
 		echo "ifconfig $DEV 0.0.0.0" >> /tmp/cleanup.sh
 		echo "ifconfig $DEV down" >> /tmp/cleanup.sh
 
@@ -117,7 +129,7 @@ z_ip() {
 			info "Gateway is not defined"
 		else
 			info "Set up defult route: $GW"
-			route add default gw "$GW" "$DEV" || fatal "Cannot set default route to $GW from device $DEV."
+			route add default gw "$GW" "$DEV" || fatal "Failure set default route to $GW from device $DEV."
 		fi
 	done
 }
@@ -133,7 +145,7 @@ z_md() {
 		MEMBER_DEVS=$(echo "${MDTARGET}" | cut -d, -f2- | cut -d: -f2- | sed -r 's/,/ /g' | sed 's/[^ ]* */\/dev\/&/g')
 
 		info " Assembling software RAID ${MD_DEV} on devices ${MEMBER_DEVS}..."
-		/sbin/mdadm --assemble --run ${MD_DEV} ${MEMBER_DEVS} || fatal "z_md(): Cannot MD assemble software RAID ${MD_DEV} on devices ${MEMBER_DEVS}"
+		/sbin/mdadm --assemble --run ${MD_DEV} ${MEMBER_DEVS} || fatal "z_md(): Failure MD assemble software RAID ${MD_DEV} on devices ${MEMBER_DEVS}"
 		#/sbin/mdadm --assemble --update=name --run ${MD_DEV} ${MEMBER_DEVS} || fatal "z_md(): Cannot MD assemble: ${MD_DEV} ${MEMBER_DEVS}"
 	done
 }
@@ -167,7 +179,7 @@ z_root() {
 		mkdir /newroot || fatal "z_root(): Cannot create mountpoint /newroot"
 	fi
 
-	mount -o "$OPTS" -n -t "$FS" "/dev/$DEV" /newroot || fatal "z_root(): Cannot mount /dev/$DEV to /newroot"
+	mount -o "$OPTS" -n -t "$FS" "/dev/$DEV" /newroot || fatal "z_root(): Failure mount /dev/$DEV to /newroot"
 }
 
 z_shell() {
@@ -228,22 +240,49 @@ z_snap() {
 				local LV_ORIGIN=
 				LV_ORIGIN=$(/sbin/lvs "${LV_SNAPDEV}" | tail -n 1 | awk '{print $5}')
 				[ -z "${LV_ORIGIN}" ] && fatal "Looks like ${LV_SNAPDEV} is not a snapshot(has not Pool Origin)! Something wrong in ZXInit configuration! Please check!"
-				/sbin/lvremove -f "${LV_SNAPDEV}" || fatal "Cannot remove LV snapshot ${LV_SNAPDEV}"
+				/sbin/lvremove -f "${LV_SNAPDEV}" || fatal "Failure remove LV snapshot ${LV_SNAPDEV}"
 			else
 				warn "	Skip creation of boot snaphot due it already exist." 
 			fi
 		else
 			info "	Create LVM snapshot ${LV_SNAPNAME} (size: ${LV_SIZE}) for volume ${LV_DEV}"
-			/sbin/lvcreate --snapshot --permission r --size "${LV_SIZE}" --name "${LV_SNAPNAME}" "${LV_DEV}" || fatal "Cannot create LV snapshot."
+			/sbin/lvcreate --snapshot --permission r --size "${LV_SIZE}" --name "${LV_SNAPNAME}" "${LV_DEV}" || fatal "Failure create LV snapshot."
 		fi
 	done
+}
+
+z_stratum_root() {
+	[ -n "$1" ] || fatal "z_stratum_root(): Wrong argument error. Example: z_stratum_root=\"vg0/stratum-images,ext4,vg0/stratum-state,ext4,d6779c7557a8f32fc5f4d636f74925241d9cc37a18d2f27683c3e87e983611bf\""
+
+	local STRATUM_IMAGES_DEV=
+	local STRATUM_IMAGES_FS=
+	local STRATUM_STATE_DEV=
+	local STRATUM_STATE_FS=
+	local STRATUM_ROOT_IMAGE=
+
+	STRATUM_IMAGES_DEV=/dev/$(echo "$1" | cut -d, -f1)
+	STRATUM_IMAGES_FS=$(echo "$1" | cut -d, -f2)
+	STRATUM_STATE_DEV=/dev/$(echo "$1" | cut -d, -f3)
+	STRATUM_STATE_FS=$(echo "$1" | cut -d, -f4)
+	STRATUM_ROOT_IMAGE=$(echo "$1" | cut -d, -f5)
+
+	mkdir /stratum || fatal "Failure create directory /stratum"
+	mkdir /stratum/images || fatal "Failure create directory /stratum/images"
+	mkdir /stratum/state || fatal "Failure create directory /stratum/state"
+
+	mount -t "${STRATUM_IMAGES_FS}" -o ro "${STRATUM_IMAGES_DEV}" /stratum/images || fatal "Failure mount \"${STRATUM_IMAGES_DEV}\" to /stratum/images"
+	mount -t "${STRATUM_STATE_FS}" -o rw "${STRATUM_STATE_DEV}" /stratum/state || fatal "Failure mount \"${STRATUM_STATE_DEV}\" to /stratum/state"
+
+	echo
+	info " z_stratum_root() is not implemented yet."
+	/bin/busybox sh
 }
 
 z_ssh() {
 	[ ! -f /root/dropbear.rsa ] && /usr/bin/dropbearkey -t rsa -f /root/dropbear.rsa
 	[ ! -f /root/dropbear.dss ] && /usr/bin/dropbearkey -t dss -f /root/dropbear.dss
 
-	/usr/sbin/dropbear -r /root/dropbear.rsa -d /root/dropbear.dss || fatal "Cannot start Dropbear SSH Server"
+	/usr/sbin/dropbear -r /root/dropbear.rsa -d /root/dropbear.dss || fatal "Failure start Dropbear SSH Server"
 	echo "pkill -f /usr/sbin/dropbear" >> /tmp/cleanup.sh
 }
 
@@ -261,7 +300,7 @@ z_vg() {
 	[ -n "$1" ] || fatal "z_vg(): Wrong argument error. Example: z_vgs=\"vg0;vg1;vg2;...\" (no /dev prefix)"
 
 	info " Scanning for Volume Groups"
-	/sbin/vgscan || fatal "z_vg(): Cannot scan volume groups"
+	/sbin/vgscan || fatal "z_vg(): Failure scan volume groups"
 
  	local FRIENDLY_ARGS=
 
@@ -269,17 +308,17 @@ z_vg() {
 
 	for VG in ${FRIENDLY_ARGS}; do
  		info " Activating Volume Group: $VG"
-		/sbin/vgchange --activate y "$VG" || fatal "z_vg(): Cannot activate volume $VG"
+		/sbin/vgchange --activate y "$VG" || fatal "z_vg(): Failure activate volume $VG"
 	done
 }
 
 
 # Set up busybox'es symlinks
-/bin/busybox --install -s || fatal "Cannot install busybox symlinks"
+/bin/busybox --install -s || fatal "Failure install busybox symlinks"
 
-touch /var/log/lastlog || fatal "Cannot create /var/log/lastlog"
+touch /var/log/lastlog || fatal "Failure create /var/log/lastlog"
 
-ln -s /proc/mounts /etc/mtab || fatal "Cannot link /etc/mtab -> /proc/mounts"
+ln -s /proc/mounts /etc/mtab || fatal "Failure link /etc/mtab -> /proc/mounts"
 
 echo "Starting udev daemon..."
 /sbin/udevd --daemon --resolve-names=never
@@ -294,7 +333,7 @@ echo "#!/bin/busybox sh" > /tmp/cleanup.sh
 echo >> /tmp/cleanup.sh
 echo "set -e" >> /tmp/cleanup.sh
 echo >> /tmp/cleanup.sh
-chmod +x /tmp/cleanup.sh || fatal "Cannot make executeble cleanup script tmp/cleanup.sh"
+chmod +x /tmp/cleanup.sh || fatal "Failure make executeble cleanup script tmp/cleanup.sh"
 
 
 # Kernel command-line
@@ -306,7 +345,7 @@ for PARAM in $KCMD; do
 	VALUE=$(echo "$PARAM" | awk -F= '{print $2}' | sed -e 's/^"//' -e 's/"$//')
 	case "$NAME" in
 		z_*)
-			$NAME "$VALUE" || fatal "Cannot execute $NAME $VALUE"
+			$NAME "$VALUE" || fatal "Failure execute $NAME $VALUE"
 			;;
 	esac
 	unset NAME
@@ -342,18 +381,18 @@ if [ -d /newroot/lib ]; then
 			if [ "${MODULES_NEED_TO_COPY}" = "yes" ]; then
 				NEWROOT_MOUNT_OPTS=$(grep /newroot /proc/mounts | cut -d' ' -f4)
 				if [ $? -ne 0 ]; then
-					fatal "Cannot obtain mount options of /newroot"
+					fatal "Failure obtain mount options of /newroot"
 				fi
 				info "Re-mounting the /newroot filesystem as RW to copy modules..."
-				mount -o remount,rw /newroot || fatal "Cannot re-mount /newroot as RW"
+				mount -o remount,rw /newroot || fatal "Failure re-mount /newroot as RW"
 				if [ ! -d /newroot/lib/modules ]; then
-					mkdir /newroot/lib/modules || fatal "Cannot create /newroot/lib/modules directory"
+					mkdir /newroot/lib/modules || fatal "Failure create /newroot/lib/modules directory"
 				fi
 				cp -a "/lib/modules/${KERNEL_RELEASE}" /newroot/lib/modules/ || fatal "Failure copy modules"
 				info "Modules ${KERNEL_RELEASE} were copied into /newroot/lib/modules"
 
 				info "Re-mounting the /newroot filesystem with original options '${NEWROOT_MOUNT_OPTS}' ..."
-				mount -o "remount,${NEWROOT_MOUNT_OPTS}" /newroot || fatal "Cannot re-mount /newroot as ${NEWROOT_MOUNT_OPTS}"
+				mount -o "remount,${NEWROOT_MOUNT_OPTS}" /newroot || fatal "Failure re-mount /newroot as ${NEWROOT_MOUNT_OPTS}"
 
 				sleep 3
 			else

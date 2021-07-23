@@ -38,7 +38,7 @@ function config_kernel() {
 
 		if [ ! -f "/data/cache/usr/src/linux-${KERNEL_SLUG}/.config" ]; then
 
-			LATEST_SITE_KERNEL_CONFIG_FILE=$(ls --reverse "/support/sites/${SITE}"/config-*-gentoo | head -1)
+			LATEST_SITE_KERNEL_CONFIG_FILE=$(ls --reverse "/support/sites/${SITE}"/config-*-gentoo-* | head -1)
 			if [ -f "${LATEST_SITE_KERNEL_CONFIG_FILE}" ]; then
 				echo "Initialize kernel configuration from ${LATEST_SITE_KERNEL_CONFIG_FILE} ..."
 				cp "${LATEST_SITE_KERNEL_CONFIG_FILE}" "/data/cache/usr/src/linux-${KERNEL_SLUG}/.config"

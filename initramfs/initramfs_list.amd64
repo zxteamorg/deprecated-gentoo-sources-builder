@@ -27,7 +27,8 @@ dir /usr/sbin          755 0 0
 dir /usr/share         755 0 0
 
 # busybox
-file /bin/busybox /bin/busybox 755 0 0
+file    /bin/busybox                           /bin/busybox                         755 0 0
+file    /usr/share/udhcpc/default.script       /usr/share/udhcpc/default.script     755 0 0
 
 # common libs
 file    /lib64/ld-linux-x86-64.so.2             /lib64/ld-linux-x86-64.so.2         755 0 0
@@ -36,7 +37,7 @@ file    /lib64/libc.so.6                        /lib64/libc.so.6                
 file    /lib64/libdl.so.2                       /lib64/libdl.so.2                   755 0 0
 file    /lib64/libkmod.so.2                     /lib64/libkmod.so.2                 755 0 0
 file    /lib64/liblzma.so.5.2.5                 /lib64/liblzma.so.5.2.5             755 0 0
-slink   /lib64/liblzma.so.5                     /lib64/liblzma.so.5.2.5            755 0 0
+slink   /lib64/liblzma.so.5                     /lib64/liblzma.so.5.2.5             755 0 0
 file    /lib64/libnss_compat-2.33.so            /lib64/libnss_compat-2.33.so        755 0 0
 slink   /lib64/libnss_compat.so.2               /lib64/libnss_compat-2.33.so        755 0 0
 file    /lib64/libnss_db-2.33.so                /lib64/libnss_db-2.33.so            755 0 0

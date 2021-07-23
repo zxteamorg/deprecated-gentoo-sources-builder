@@ -382,21 +382,7 @@ fi
 if [ -d /newroot/lib ]; then
 	KERNEL_RELEASE=$(uname -r)
 	if [ -d "/lib/modules/${KERNEL_RELEASE}" ]; then
-			echo "Checking modules..."
-			MODULES_NEED_TO_COPY="no"
 			if [ ! -d "/newroot/lib/modules/${KERNEL_RELEASE}" ]; then
-				MODULES_NEED_TO_COPY="yes"
-			else
-				cd /lib/modules/
-				RELEASE_MODULES_SUM=$(find "${KERNEL_RELEASE}" -type f | sort | xargs sha1sum | sha1sum | cut -d' ' -f1)
-				cd /newroot/lib/modules/
-				EXISTING_MODULES_SUM=$(find "${KERNEL_RELEASE}" -type f | sort | xargs sha1sum | sha1sum | cut -d' ' -f1)
-				if [ "${RELEASE_MODULES_SUM}" != "${EXISTING_MODULES_SUM}" ]; then
-					MODULES_NEED_TO_COPY="yes"
-				fi
-			fi
-
-			if [ "${MODULES_NEED_TO_COPY}" = "yes" ]; then
 				NEWROOT_MOUNT_OPTS=$(grep /newroot /proc/mounts | cut -d' ' -f4)
 				if [ $? -ne 0 ]; then
 					fatal "Failure obtain mount options of /newroot"

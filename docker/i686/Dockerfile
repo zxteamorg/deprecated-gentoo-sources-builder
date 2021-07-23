@@ -73,6 +73,5 @@ COPY docker/docker-entrypoint.sh /support/docker-entrypoint.sh
 VOLUME [ "/data/build", "/data/cache" ]
 
 ENV SITE=
-ENV CLEAN_INITRAMFS=no
 
 ENTRYPOINT [ "/support/docker-entrypoint.sh" ]

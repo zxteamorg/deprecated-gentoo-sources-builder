@@ -84,7 +84,6 @@ docker run --rm --interactive --tty \
   --mount type=bind,source="${PWD}/.${SITE}",target=/data/build \
   --volume "${ARCH}-${SITE}-cache":/data/cache \
   --env SITE \
-  --env CLEAN_INITRAMFS=y \
   "docker.registry.zxteam.net/pub/misc/gentoo-sources-builder/${ARCH}" \
     initramfs
 

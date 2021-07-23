@@ -36,16 +36,16 @@ fatal() {
 	exec /bin/busybox sh
 }
 
-z_dchp() {
-	[ -n "$1" ] || fatal "z_fsck(): Wrong argument error. Example: z_dchp=\"eth0;eth1\""
+z_dhсp() {
+	[ -n "$1" ] || fatal "z_dhсp(): Wrong argument error. Example: z_dhсp=\"eth0;eth1\""
 
 	local FRIENDLY_ARGS=
 
 	FRIENDLY_ARGS=$(echo "$1" | sed -r 's/;/ /g')
 
 	for DEV in ${FRIENDLY_ARGS}; do
-		/sbin/ip link set up "${DEV}" || fatal "Failure set UP state for device ${DEV}."
-		/sbin/udhcpc -i "${DEV}" -n || fatal "Failure obtain lease for device ${DEV}."
+		/sbin/ip link set up "${DEV}" || fatal "z_dhсp(): Failure set UP state for device ${DEV}."
+		/sbin/udhcpc -i "${DEV}" -n || fatal "z_dhсp(): Failure obtain lease for device ${DEV}."
 	done
 }
 
@@ -266,9 +266,9 @@ z_stratum_root() {
 	STRATUM_STATE_FS=$(echo "$1" | cut -d, -f4)
 	STRATUM_ROOT_IMAGE=$(echo "$1" | cut -d, -f5)
 
-	mkdir /stratum || fatal "Failure create directory /stratum"
-	mkdir /stratum/images || fatal "Failure create directory /stratum/images"
-	mkdir /stratum/state || fatal "Failure create directory /stratum/state"
+	mkdir /stratum || fatal "z_stratum_root(): Failure create directory /stratum"
+	mkdir /stratum/images || fatal "z_stratum_root(): Failure create directory /stratum/images"
+	mkdir /stratum/state || fatal "z_stratum_root(): Failure create directory /stratum/state"
 
 	mount -t "${STRATUM_IMAGES_FS}" -o ro "${STRATUM_IMAGES_DEV}" /stratum/images || fatal "Failure mount \"${STRATUM_IMAGES_DEV}\" to /stratum/images"
 	mount -t "${STRATUM_STATE_FS}" -o rw "${STRATUM_STATE_DEV}" /stratum/state || fatal "Failure mount \"${STRATUM_STATE_DEV}\" to /stratum/state"

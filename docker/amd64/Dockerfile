@@ -71,4 +71,7 @@ COPY initramfs/uncrypt                              /support/initramfs/uncrypt
 COPY docker/docker-entrypoint.sh /support/docker-entrypoint.sh
 
 VOLUME [ "/data/build", "/data/cache" ]
+
+ENV SITE=
+
 ENTRYPOINT [ "/support/docker-entrypoint.sh" ]

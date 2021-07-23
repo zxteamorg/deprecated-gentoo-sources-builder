@@ -2,13 +2,14 @@
 
 set -o pipefail
 
-mount -n -t proc proc /proc || fatal "Cannot mount /proc"
+mount -n -t proc proc /proc || fatal "Failure mount /proc"
 echo 0 > /proc/sys/kernel/printk
 
-mount -n -t devtmpfs devtmpfs /dev || fatal "Cannot mount /dev"
-mkdir -m 0755 /dev/pts || fatal "Cannot create directory /dev/pts with perms 755"
-mount -n -t devpts -o gid=5,mode=0620 devpts /dev/pts || fatal "Cannot mount /dev/pts"
-mount -n -t sysfs sysfs /sys || fatal "Cannot mount /dev/pts"
+mount -n -t devtmpfs devtmpfs /dev || fatal "Failure mount /dev"
+mkdir -m 0755 /dev/pts || fatal "Failure create directory /dev/pts with perms 755"
+mount -n -t devpts -o gid=5,mode=0620 devpts /dev/pts || fatal "Failure mount /dev/pts"
+mount -n -t sysfs sysfs /sys || fatal "Failure mount /dev/pts"
+mount -n -t tmpfs -o rw,nodev,mode=755 none /run || fatal "Failure mount /run"
 
 cat <<EOF
 
@@ -46,6 +47,8 @@ z_dhcp() {
 	for DEV in ${FRIENDLY_ARGS}; do
 		/sbin/ip link set up "${DEV}" || fatal "z_dhcp(): Failure set UP state for device ${DEV}."
 		/sbin/udhcpc -i "${DEV}" -n || fatal "z_dhcp(): Failure obtain lease for device ${DEV}."
+
+		echo "pkill -f /sbin/udhcpc" >> /tmp/cleanup.sh
 	done
 }
 
@@ -251,6 +254,14 @@ z_snap() {
 	done
 }
 
+z_ssh() {
+	[ ! -f /root/dropbear.rsa ] && /usr/bin/dropbearkey -t rsa -f /root/dropbear.rsa
+	[ ! -f /root/dropbear.dss ] && /usr/bin/dropbearkey -t dss -f /root/dropbear.dss
+
+	/usr/sbin/dropbear -r /root/dropbear.rsa -d /root/dropbear.dss || fatal "Failure start Dropbear SSH Server"
+	echo "pkill -f /usr/sbin/dropbear" >> /tmp/cleanup.sh
+}
+
 z_stratum_root() {
 	[ -n "$1" ] || fatal "z_stratum_root(): Wrong argument error. Example: z_stratum_root=\"vg0/stratum-images,ext4,vg0/stratum-state,ext4,d6779c7557a8f32fc5f4d636f74925241d9cc37a18d2f27683c3e87e983611bf\""
 
@@ -266,24 +277,16 @@ z_stratum_root() {
 	STRATUM_STATE_FS=$(echo "$1" | cut -d, -f4)
 	STRATUM_ROOT_IMAGE=$(echo "$1" | cut -d, -f5)
 
-	mkdir /stratum || fatal "z_stratum_root(): Failure create directory /stratum"
-	mkdir /stratum/images || fatal "z_stratum_root(): Failure create directory /stratum/images"
-	mkdir /stratum/state || fatal "z_stratum_root(): Failure create directory /stratum/state"
+	mkdir /run/stratum || fatal "z_stratum_root(): Failure create directory /run/stratum"
+	mkdir /run/stratum/images || fatal "z_stratum_root(): Failure create directory /run/stratum/images"
+	mkdir /run/stratum/state || fatal "z_stratum_root(): Failure create directory /run/stratum/state"
 
-	mount -t "${STRATUM_IMAGES_FS}" -o ro "${STRATUM_IMAGES_DEV}" /stratum/images || fatal "Failure mount \"${STRATUM_IMAGES_DEV}\" to /stratum/images"
-	mount -t "${STRATUM_STATE_FS}" -o rw "${STRATUM_STATE_DEV}" /stratum/state || fatal "Failure mount \"${STRATUM_STATE_DEV}\" to /stratum/state"
+	mount -t "${STRATUM_IMAGES_FS}" -o ro "${STRATUM_IMAGES_DEV}" /stratum/images || fatal "Failure mount \"${STRATUM_IMAGES_DEV}\" to /run/stratum/images"
+	mount -t "${STRATUM_STATE_FS}" -o rw "${STRATUM_STATE_DEV}" /stratum/state || fatal "Failure mount \"${STRATUM_STATE_DEV}\" to /run/stratum/state"
 
 	echo
 	info " z_stratum_root() is not implemented yet."
 	/bin/busybox sh
-}
-
-z_ssh() {
-	[ ! -f /root/dropbear.rsa ] && /usr/bin/dropbearkey -t rsa -f /root/dropbear.rsa
-	[ ! -f /root/dropbear.dss ] && /usr/bin/dropbearkey -t dss -f /root/dropbear.dss
-
-	/usr/sbin/dropbear -r /root/dropbear.rsa -d /root/dropbear.dss || fatal "Failure start Dropbear SSH Server"
-	echo "pkill -f /usr/sbin/dropbear" >> /tmp/cleanup.sh
 }
 
 z_uncrypt() {
@@ -409,13 +412,19 @@ fi
 echo 1 > /proc/sys/kernel/printk
 
 # Clean up.
-umount -n /sys || fatal "Cannot umount /sys"
-umount -n /dev/pts || fatal "Cannot umount /dev/pts"
-umount -n /dev || fatal "Cannot umount /dev"
+umount -n /sys || fatal "Failure umount /sys"
+umount -n /dev/pts || fatal "Failure umount /dev/pts"
+umount -n /dev || fatal "Failure umount /dev"
+
+# TODO mount /run and move it to newroot before switch
+#tmpfs on /run type tmpfs (rw,nodev,relatime,size=2463012k,mode=755)
+# mount -o move /run /newroot/run
 
 echo 1 > /proc/sys/kernel/printk
 
-umount -n /proc || fatal "Cannot umount /proc"
+umount -n /proc || fatal "Failure umount /proc"
+
+mount -o move /run /newroot/run || fatal "Failure move mount /run to /newroot/run"
 
 # Boot the real thing.
 exec switch_root /newroot /sbin/init $@

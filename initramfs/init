@@ -281,8 +281,8 @@ z_stratum_root() {
 	mkdir /run/stratum/images || fatal "z_stratum_root(): Failure create directory /run/stratum/images"
 	mkdir /run/stratum/state || fatal "z_stratum_root(): Failure create directory /run/stratum/state"
 
-	mount -t "${STRATUM_IMAGES_FS}" -o ro "${STRATUM_IMAGES_DEV}" /stratum/images || fatal "Failure mount \"${STRATUM_IMAGES_DEV}\" to /run/stratum/images"
-	mount -t "${STRATUM_STATE_FS}" -o rw "${STRATUM_STATE_DEV}" /stratum/state || fatal "Failure mount \"${STRATUM_STATE_DEV}\" to /run/stratum/state"
+	mount -t "${STRATUM_IMAGES_FS}" -o ro "${STRATUM_IMAGES_DEV}" /run/stratum/images || fatal "Failure mount \"${STRATUM_IMAGES_DEV}\" to /run/stratum/images"
+	mount -t "${STRATUM_STATE_FS}" -o rw "${STRATUM_STATE_DEV}" /run/stratum/state || fatal "Failure mount \"${STRATUM_STATE_DEV}\" to /run/stratum/state"
 
 	echo
 	info " z_stratum_root() is not implemented yet."
@@ -415,10 +415,6 @@ echo 1 > /proc/sys/kernel/printk
 umount -n /sys || fatal "Failure umount /sys"
 umount -n /dev/pts || fatal "Failure umount /dev/pts"
 umount -n /dev || fatal "Failure umount /dev"
-
-# TODO mount /run and move it to newroot before switch
-#tmpfs on /run type tmpfs (rw,nodev,relatime,size=2463012k,mode=755)
-# mount -o move /run /newroot/run
 
 echo 1 > /proc/sys/kernel/printk
 

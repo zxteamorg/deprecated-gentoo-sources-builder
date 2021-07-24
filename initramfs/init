@@ -282,12 +282,16 @@ z_stratum_root() {
 	mkdir /run/stratum/state || fatal "z_stratum_root(): Failure create directory /run/stratum/state"
 
 	mount -t "${STRATUM_IMAGES_FS}" -o ro "${STRATUM_IMAGES_DEV}" /run/stratum/images || fatal "Failure mount \"${STRATUM_IMAGES_DEV}\" to /run/stratum/images"
+	info "/run/stratum/images mounted from ${STRATUM_IMAGES_DEV}"
+
 	mount -t "${STRATUM_STATE_FS}" -o rw "${STRATUM_STATE_DEV}" /run/stratum/state || fatal "Failure mount \"${STRATUM_STATE_DEV}\" to /run/stratum/state"
+	info "/run/stratum/state mounted from ${STRATUM_STATE_DEV}"
 
 	local STATE_DIR="/run/stratum/state/${STRATUM_ROOT_IMAGE}"
 
 	if [ ! -d "${STATE_DIR}" ]; then
 		mkdir "${STATE_DIR}" || fatal "z_stratum_root(): Failure create state dir ${STATE_DIR}"
+		info "${STATE_DIR} state directory was created"
 	fi
 
 	local LAYER_NUMBER=0
@@ -296,7 +300,7 @@ z_stratum_root() {
 
 	while [ -n "${IMAGE_HASH}" ]; do
 		local IMAGE_DIR="/run/stratum/images/${IMAGE_HASH}"
-		[ ! -d "${IMAGE_DIR}" ] || fatal "z_stratum_root(): Image ${IMAGE_HASH} does not exist"
+		[ -d "${IMAGE_DIR}" ] || fatal "z_stratum_root(): Image ${IMAGE_HASH} does not exist"
 
 		local IMAGE_MANIFEST_FILE="${IMAGE_DIR}/MANIFEST"
 		local IMAGE_DATA_FILE="${IMAGE_DIR}/DATA"
@@ -306,9 +310,11 @@ z_stratum_root() {
 
 		if [ ! -d "${LAYER_DIR}" ]; then
 			mkdir "${LAYER_DIR}" || fatal "z_stratum_root(): Failure create layer dir ${STATE_DIR}"
+			info "${LAYER_DIR} layer directory was created"
 		fi
 
 		mount -t squashfs -o ro,loop "${IMAGE_DATA_FILE}" "${LAYER_DIR}" || fatal "z_stratum_root(): Failure mount layer \"${IMAGE_DATA_FILE}\" to \"${LAYER_DIR}\""
+		info "${IMAGE_DATA_FILE} layer image was mounted to ${LAYER_DIR}"
 
 		if [ -n "${LOWERDIRS}" ]; then
 			LOWERDIRS="${LOWERDIRS}:${LAYER_DIR}"
@@ -326,16 +332,17 @@ z_stratum_root() {
 
 	if [ ! -d "${WORK_DIR}" ]; then
 		mkdir "${WORK_DIR}" || fatal "z_stratum_root(): Failure create layer dir ${WORK_DIR}"
+		info "${WORK_DIR} work directory was created"
 	fi
 
 	local TOP_DIR="${STATE_DIR}/top"
 
 	if [ ! -d "${TOP_DIR}" ]; then
 		mkdir "${TOP_DIR}" || fatal "z_stratum_root(): Failure create layer dir ${TOP_DIR}"
+		info "${TOP_DIR} top directory was created"
 	fi
 
 	mount -t overlay -o "lowerdir=${LOWERDIRS},workdir=${WORK_DIR},upperdir=${TOP_DIR}" none /newroot || fatal "z_stratum_root(): Failure mount overlay /newroot based on ${LOWERDIRS}"
-
 
 	# echo
 	# info " z_stratum_root() is not implemented yet."

@@ -342,26 +342,7 @@ z_stratum_root() {
 		info "${TOP_DIR} top directory was created"
 	fi
 
-	mount -t overlay -o "lowerdir=${LOWERDIRS},workdir=${WORK_DIR},upperdir=${TOP_DIR}" none /newroot || fatal "z_stratum_root(): Failure mount overlay /newroot based on ${LOWERDIRS}"
-
-	# echo
-	# info " z_stratum_root() is not implemented yet."
-	# /bin/busybox sh
-
-	# set -ex
-	# if [ ! -d /run/stratum/state/d6779c7557a8f32fc5f4d636f74925241d9cc37a18d2f27683c3e87e983611bf ]; then
-	# 	mkdir /run/stratum/state/d6779c7557a8f32fc5f4d636f74925241d9cc37a18d2f27683c3e87e983611bf
-	# fi
-	# if [ ! -d /run/stratum/state/d6779c7557a8f32fc5f4d636f74925241d9cc37a18d2f27683c3e87e983611bf/top ]; then
-	# 	mkdir /run/stratum/state/d6779c7557a8f32fc5f4d636f74925241d9cc37a18d2f27683c3e87e983611bf/top
-	# fi
-	# if [ ! -d /run/stratum/state/d6779c7557a8f32fc5f4d636f74925241d9cc37a18d2f27683c3e87e983611bf/.work ]; then
-	# 	mkdir /run/stratum/state/d6779c7557a8f32fc5f4d636f74925241d9cc37a18d2f27683c3e87e983611bf/.work
-	# fi
-	# mount -t squashfs -o ro,loop /run/stratum/images/4a76868dae9c5725645532ff44be1b1217f3b7d6e55ec768ea1e46d17f01a968/DATA /run/stratum/state/d6779c7557a8f32fc5f4d636f74925241d9cc37a18d2f27683c3e87e983611bf/layer0
-	# mount -t squashfs -o ro,loop /run/stratum/images/940c6578ffa80250d7ee8a0a4f25c7c66a7b522d2af9b9c8f19df5ee316e47c8/DATA /run/stratum/state/d6779c7557a8f32fc5f4d636f74925241d9cc37a18d2f27683c3e87e983611bf/layer1
-	# mount -t squashfs -o ro,loop /run/stratum/images/d6779c7557a8f32fc5f4d636f74925241d9cc37a18d2f27683c3e87e983611bf/DATA /run/stratum/state/d6779c7557a8f32fc5f4d636f74925241d9cc37a18d2f27683c3e87e983611bf/layer2
-	# mount -t overlay -o lowerdir=/run/stratum/state/d6779c7557a8f32fc5f4d636f74925241d9cc37a18d2f27683c3e87e983611bf/layer2:/run/stratum/state/d6779c7557a8f32fc5f4d636f74925241d9cc37a18d2f27683c3e87e983611bf/layer1:/run/stratum/state/d6779c7557a8f32fc5f4d636f74925241d9cc37a18d2f27683c3e87e983611bf/layer0,workdir=/run/stratum/state/d6779c7557a8f32fc5f4d636f74925241d9cc37a18d2f27683c3e87e983611bf/.work,upperdir=/run/stratum/state/d6779c7557a8f32fc5f4d636f74925241d9cc37a18d2f27683c3e87e983611bf/top none /newroot
+	mount -t overlay -o "ro,lowerdir=${LOWERDIRS},workdir=${WORK_DIR},upperdir=${TOP_DIR}" none /newroot || fatal "z_stratum_root(): Failure mount overlay /newroot based on ${LOWERDIRS}"
 }
 
 z_uncrypt() {

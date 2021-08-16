@@ -60,6 +60,7 @@ slink   /lib64/libz.so.1                        /lib64/libz.so.1.2.11           
 
 # Curl
 file    /usr/bin/curl                           /usr/bin/curl                       755 0 0
+dir                                             /usr/lib64                          755 0 0
 file    /usr/lib64/libcurl.so.4.7.0             /usr/lib64/libcurl.so.4.7.0         755 0 0
 slink   /usr/lib64/libcurl.so.4                 /usr/lib64/libcurl.so.4.7.0         755 0 0
 slink   /usr/lib64/libcurl.so                   /usr/lib64/libcurl.so.4.7.0         755 0 0

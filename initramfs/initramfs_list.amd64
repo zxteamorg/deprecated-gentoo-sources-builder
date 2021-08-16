@@ -51,8 +51,12 @@ slink   /lib64/libnss_files.so.2                /lib64/libnss_files-2.33.so     
 file    /lib64/libnss_hesiod-2.33.so            /lib64/libnss_hesiod-2.33.so        755 0 0
 slink   /lib64/libnss_hesiod.so.2               /lib64/libnss_hesiod-2.33.so        755 0 0
 file    /lib64/libpthread.so.0                  /lib64/libpthread.so.0              755 0 0
-file    /lib64/librt.so.1                       /lib64/librt.so.1                   755 0 0
-file    /lib64/libz.so.1                        /lib64/libz.so.1                    755 0 0
+file    /lib64/libresolv-2.33.so                /lib64/libresolv-2.33.so            755 0 0
+slink   /lib64/libresolv.so.2                   /lib64/libresolv-2.33.so            755 0 0
+file    /lib64/librt-2.33.so                    /lib64/librt-2.33.so                755 0 0
+slink   /lib64/librt.so.1                       /lib64/librt-2.33.so                755 0 0
+file    /lib64/libz.so.1.2.11                   /lib64/libz.so.1.2.11               755 0 0
+slink   /lib64/libz.so.1                        /lib64/libz.so.1.2.11               755 0 0
 
 # libraries required by /sbin/fsck.ext4 and /sbin/fsck
 file    /lib64/libext2fs.so.2                   /lib64/libext2fs.so.2               755 0 0

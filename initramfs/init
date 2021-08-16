@@ -46,8 +46,7 @@ z_dhcp() {
 
 	for DEV in ${FRIENDLY_ARGS}; do
 		/sbin/ip link set up "${DEV}" || fatal "z_dhcp(): Failure set UP state for device ${DEV}."
-		/sbin/udhcpc -i "${DEV}" -n || fatal "z_dhcp(): Failure obtain lease for device ${DEV}."
-
+		/sbin/udhcpc -i "${DEV}" -s /usr/share/udhcpc/default.script || fatal "z_dhcp(): Failure obtain lease for device ${DEV}." 
 		echo "pkill -f /sbin/udhcpc" >> /tmp/cleanup.sh
 	done
 }

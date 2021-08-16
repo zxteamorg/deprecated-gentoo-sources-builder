@@ -28,6 +28,8 @@ dir /usr/share         755 0 0
 
 # busybox
 file    /bin/busybox                           /bin/busybox                         755 0 0
+
+dir                                            /usr/share/udhcpc                    755 0 0
 file    /usr/share/udhcpc/default.script       /usr/share/udhcpc/default.script     755 0 0
 
 # common libs

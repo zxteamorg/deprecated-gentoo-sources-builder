@@ -59,6 +59,7 @@ export ARCH=amd64
 
 # Select SITE
 #export SITE=asrockpv530aitx
+#export SITE=asusx402ca
 #export SITE=axx99v102a
 #export SITE=dellcs24sc
 export SITE=digitaloceanvm

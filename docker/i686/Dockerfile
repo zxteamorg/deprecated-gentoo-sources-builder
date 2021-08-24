@@ -1,10 +1,10 @@
 # https://hub.docker.com/r/gentoo/stage3
-# gentoo/stage3:x86-20210813 -> DIGEST:sha256:beabdeb0517bf2f3b54a00606aed23b8baadc11430cf217e134fbbc230e8bce2
-ARG GENTOO_STAGE3_IMAGE_DIGEST=sha256:beabdeb0517bf2f3b54a00606aed23b8baadc11430cf217e134fbbc230e8bce2
+# gentoo/stage3:x86-20210820 -> DIGEST:sha256:0b8b2cc912674417028490c5acd33199d40cae2e94b0fa4e2853a9297154eb9f
+ARG GENTOO_STAGE3_IMAGE_DIGEST=sha256:0b8b2cc912674417028490c5acd33199d40cae2e94b0fa4e2853a9297154eb9f
 
 # https://hub.docker.com/r/gentoo/portage
-# gentoo/portage:20210813 -> DIGEST:sha256:ae92d292456d3c0d6773ba4478677616bdbae78c71f3d8884369e0b8db3da3db
-ARG GENTOO_PORTAGE_IMAGE_DIGEST=sha256:ae92d292456d3c0d6773ba4478677616bdbae78c71f3d8884369e0b8db3da3db
+# gentoo/portage:20210824 -> DIGEST:sha256:7aec3cb9a1bc645e3485c2cfad698a443cdab583a8f4b12da28c2bcb57467c07
+ARG GENTOO_PORTAGE_IMAGE_DIGEST=sha256:7aec3cb9a1bc645e3485c2cfad698a443cdab583a8f4b12da28c2bcb57467c07
 
 # Use the empty image with the portage tree as the first stage
 FROM gentoo/portage@${GENTOO_PORTAGE_IMAGE_DIGEST} AS portage

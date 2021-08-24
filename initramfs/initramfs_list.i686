@@ -34,7 +34,7 @@ file    /usr/share/udhcpc/default.script       /usr/share/udhcpc/default.script 
 # common libs
 file    /lib/ld-linux.so.2                      /lib/ld-linux.so.2                  755 0 0
 file    /lib/libblkid.so.1.1.0                  /lib/libblkid.so.1.1.0              755 0 0
-slink   /lib/libblkid.so.1                      libblkid.so.1.1.0                   755 0 0
+slink   /lib/libblkid.so.1                      /lib/libblkid.so.1.1.0              755 0 0
 file    /lib/libc.so.6                          /lib/libc.so.6                      755 0 0
 file    /lib/libdl.so.2                         /lib/libdl.so.2                     755 0 0
 file    /lib/libkmod.so.2                       /lib/libkmod.so.2                   755 0 0

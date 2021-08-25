@@ -78,7 +78,14 @@ docker run --rm --interactive --tty \
   --volume "${ARCH}-${SITE}-cache":/data/cache \
   --env SITE \
   "docker.registry.zxteam.net/pub/misc/gentoo-sources-builder/${ARCH}" \
+    menuconfig
+docker run --rm --interactive --tty \
+  --mount type=bind,source="${PWD}/.${SITE}",target=/data/build \
+  --volume "${ARCH}-${SITE}-cache":/data/cache \
+  --env SITE \
+  "docker.registry.zxteam.net/pub/misc/gentoo-sources-builder/${ARCH}" \
     kernel
+
 
 # Make initramfs
 docker run --rm --interactive --tty \
@@ -91,4 +98,19 @@ docker run --rm --interactive --tty \
 
 # Cleanup
 docker volume rm "${ARCH}-${SITE}-cache"
+```
+
+
+### Develop initramfs
+
+To develop and debug `init` script you may attach `initramfs/init` file into container
+
+```shell
+docker run --rm --interactive --tty \
+  --mount type=bind,source="${PWD}/initramfs/init",target=/support/initramfs/init \
+  --mount type=bind,source="${PWD}/.${SITE}",target=/data/build \
+  --volume "${ARCH}-${SITE}-cache":/data/cache \
+  --env SITE \
+  "docker.registry.zxteam.net/pub/misc/gentoo-sources-builder/${ARCH}" \
+    initramfs
 ```

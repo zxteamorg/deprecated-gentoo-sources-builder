@@ -6,14 +6,16 @@ variables:
 image: ${BUILD_IMAGE}
 
 stages:
-  - build
+  - builders
+  - targets
 
 i686-builder:
-  stage: build
+  stage: builders
   tags:
     - docker-builder
   only:
     - master
+    - tags
   script:
     # Build an image
     - export DOCKER_IMAGE_NAME="${CI_REGISTRY_IMAGE}/i686"
@@ -41,11 +43,12 @@ i686-builder:
     - echo "See README.md for 'docker run' command. The image ${DOCKER_IMAGE_NAME}:latest"
 
 amd64-builder:
-  stage: build
+  stage: builders
   tags:
     - docker-builder
   only:
     - master
+    - tags
   script:
     # Build an image
     - export DOCKER_IMAGE_NAME="${CI_REGISTRY_IMAGE}/amd64"
@@ -71,3 +74,28 @@ amd64-builder:
     - echo "See README.md for 'docker run' command. The image ${DOCKER_IMAGE_NAME}:${VERSION_TAG_CURRENT}"
     - echo "See README.md for 'docker run' command. The image ${DOCKER_IMAGE_NAME}:${VERSION_TAG_LATEST}"
     - echo "See README.md for 'docker run' command. The image ${DOCKER_IMAGE_NAME}:latest"
+
+amd64-virtualboxvm:
+  stage: targets
+  image:
+    name: "${CI_REGISTRY_IMAGE}/amd64:${CI_COMMIT_REF_SLUG}.${CI_COMMIT_SHORT_SHA}"
+    entrypoint: [""]
+  tags:
+    - docker
+  only:
+    - master
+    - tags
+  script:
+    - export DOCKER_IMAGE_NAME="${CI_REGISTRY_IMAGE}/amd64"
+    - export VERSION_TAG_CURRENT="${CI_COMMIT_REF_SLUG}.${CI_COMMIT_SHORT_SHA}"
+    - export ARCH=amd64
+    - export SITE=virtualboxvm
+    - /support/docker-entrypoint.sh config
+    - /support/docker-entrypoint.sh kernel
+    - /support/docker-entrypoint.sh initramfs
+  artifacts:
+    paths:
+      - "/data/build/boot/System.map-${KERNEL_VERSION}-gentoo-virtualboxvm"
+      - "/data/build/boot/config-${KERNEL_VERSION}-gentoo-virtualboxvm"
+      - "/data/build/boot/initramfs-${KERNEL_VERSION}-gentoo-virtualboxvm.cpio.gz"
+      - "/data/build/boot/vmlinuz-${KERNEL_VERSION}-gentoo-virtualboxvm"

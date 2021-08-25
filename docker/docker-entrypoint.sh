@@ -50,9 +50,14 @@ function config_kernel() {
 		echo "Skip config initialization due SITE variable is not set."
 	fi
 
-	if [ -f ".config" ]; then
+	if [ -f "/data/cache/usr/src/linux-${KERNEL_SLUG}/.config" ]; then
 		KBUILD_OUTPUT="/data/cache/usr/src/linux-${KERNEL_SLUG}" make oldconfig
 	fi
+}
+
+function menuconfig_kernel() {
+	config_kernel
+
 	KBUILD_OUTPUT="/data/cache/usr/src/linux-${KERNEL_SLUG}" make menuconfig
 }
 
@@ -166,21 +171,23 @@ case "$1" in
 	config)
 		config_kernel
 		;;
+	menuconfig)
+		menuconfig_kernel
+		;;
 	kernel)
-		config_kernel
 		build_kernel
 		;;
 	initramfs)
 		build_initramfs
 		;;
 	all)
-		config_kernel
+		menuconfig_kernel
 		build_kernel
 		build_initramfs
 		;;
 	*)
 		echo >&2
-		echo "	Available quick commands: 'config', 'kernel', 'initramfs' and 'all'" >&2
+		echo "	Available quick commands: 'config', 'menuconfig', 'kernel', 'initramfs' and 'all'" >&2
 		echo >&2
 		echo >&2
 		exec /bin/busybox sh -c "$*"

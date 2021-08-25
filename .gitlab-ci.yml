@@ -92,12 +92,7 @@ amd64-virtualboxvm:
     - /support/docker-entrypoint.sh config
     - /support/docker-entrypoint.sh kernel
     - /support/docker-entrypoint.sh initramfs
-    - ls -l /data
-    - ls -l /data/build
-    - ls -l /data/build/boot
+    - mv /data/build/boot ./artifacts
   artifacts:
     paths:
-      - "/data/build/boot/System.map-${KERNEL_VERSION}-gentoo-virtualboxvm"
-      - "/data/build/boot/config-${KERNEL_VERSION}-gentoo-virtualboxvm"
-      - "/data/build/boot/initramfs-${KERNEL_VERSION}-gentoo-virtualboxvm.cpio.gz"
-      - "/data/build/boot/vmlinuz-${KERNEL_VERSION}-gentoo-virtualboxvm"
+      - "artifacts/*"

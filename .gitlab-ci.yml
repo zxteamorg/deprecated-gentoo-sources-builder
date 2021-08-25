@@ -12,7 +12,7 @@ stages:
 i686-builder:
   stage: builders
   tags:
-    - docker-builder
+    - docker-builder-20.10
   only:
     - master
     - tags
@@ -45,7 +45,7 @@ i686-builder:
 amd64-builder:
   stage: builders
   tags:
-    - docker-builder
+    - docker-builder-20.10
   only:
     - master
     - tags
@@ -79,7 +79,7 @@ amd64-virtualboxvm:
   stage: targets
   image:
     name: "${CI_REGISTRY_IMAGE}/amd64:${CI_COMMIT_REF_SLUG}.${CI_COMMIT_SHORT_SHA}"
-    entrypoint: [""]
+    entrypoint: ["/bin/sh", "-c"]
   tags:
     - docker
   only:

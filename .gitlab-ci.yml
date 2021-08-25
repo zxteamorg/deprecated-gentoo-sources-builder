@@ -89,6 +89,7 @@ amd64-virtualboxvm:
     - export DOCKER_IMAGE_NAME="${CI_REGISTRY_IMAGE}/amd64"
     - export VERSION_TAG_CURRENT="${CI_COMMIT_REF_SLUG}.${CI_COMMIT_SHORT_SHA}"
     - export SITE=virtualboxvm
+    - export ARCH=x86_64
     - /support/docker-entrypoint.sh config
     - /support/docker-entrypoint.sh kernel
     - /support/docker-entrypoint.sh initramfs

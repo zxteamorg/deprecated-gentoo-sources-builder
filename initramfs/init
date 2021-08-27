@@ -415,21 +415,22 @@ z_stratum_root() {
 
 	while [ -n "${IMAGE_HASH}" ]; do
 		local IMAGE_DIR="/run/stratum/images/${IMAGE_HASH}"
+		local IMAGE_MANIFEST_FILE="${IMAGE_DIR}/MANIFEST"
+		local IMAGE_DATA_FILE="${IMAGE_DIR}/DATA"
+
 		if [ -d "${IMAGE_DIR}" ]; then
 			if [ ! -f "${IMAGE_MANIFEST_FILE}" -o ! -f "${IMAGE_DATA_FILE}" ]; then
-				rm -rf "${IMAGE_DIR}" || fatal "Failure remove broken image dir \"${IMAGE_DIR}\""
+				warn "z_stratum_root(): Removing broken image dir \"${IMAGE_DIR}\" ..."
+				rm -rf "${IMAGE_DIR}" || fatal "z_stratum_root(): Failure remove broken image dir \"${IMAGE_DIR}\""
 			fi
 		fi
 
 		if [ ! -d "${IMAGE_DIR}" ]; then
-			info "Downloading image ${IMAGE_HASH} ..."
+			info "z_stratum_root(): Downloading image ${IMAGE_HASH} ..."
 			__stratum__download_image "${IMAGE_HASH}"
 		else
-			info "${IMAGE_HASH} already exist"
+			info "z_stratum_root(): ${IMAGE_HASH} already exist"
 		fi
-
-		local IMAGE_MANIFEST_FILE="${IMAGE_DIR}/MANIFEST"
-		local IMAGE_DATA_FILE="${IMAGE_DIR}/DATA"
 
 		local LAYER_NAME="layer${LAYER_NUMBER}"
 		local LAYER_DIR="${STATE_DIR}/${LAYER_NAME}"

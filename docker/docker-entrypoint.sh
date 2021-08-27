@@ -26,22 +26,24 @@ fi
 cd /usr/src/linux
 KERNEL_SLUG=$(basename $(pwd -LP) | cut -d- -f2-)
 
+export KBUILD_OUTPUT="/data/cache/usr/src/linux-${KERNEL_SLUG}"
 
-function config_kernel() {
-	if [ ! -d "/data/cache/usr/src/linux-${KERNEL_SLUG}" ]; then
-		echo "Creating kernel build directory /data/cache/usr/src/linux-${KERNEL_SLUG}..."
-		mkdir --parents "/data/cache/usr/src/linux-${KERNEL_SLUG}"
+
+function initconfig_kernel() {
+	if [ ! -d "${KBUILD_OUTPUT}" ]; then
+		echo "Creating kernel build directory ${KBUILD_OUTPUT}..."
+		mkdir --parents "${KBUILD_OUTPUT}"
 	fi
 
 	if [ -n "${SITE}" ]; then
 		echo "Using SITE: ${SITE}"
 
-		if [ ! -f "/data/cache/usr/src/linux-${KERNEL_SLUG}/.config" ]; then
+		if [ ! -f "${KBUILD_OUTPUT}/.config" ]; then
 
 			LATEST_SITE_KERNEL_CONFIG_FILE=$(ls "/support/sites/${SITE}"/config-*-gentoo-* | sort -rV | head -1)
 			if [ -f "${LATEST_SITE_KERNEL_CONFIG_FILE}" ]; then
 				echo "Initialize kernel configuration from ${LATEST_SITE_KERNEL_CONFIG_FILE} ..."
-				cp "${LATEST_SITE_KERNEL_CONFIG_FILE}" "/data/cache/usr/src/linux-${KERNEL_SLUG}/.config"
+				cp "${LATEST_SITE_KERNEL_CONFIG_FILE}" "${KBUILD_OUTPUT}/.config"
 			else
 				echo "Cannot initialize kernel configuration due a file /support/sites/${SITE}/config-${KERNEL_SLUG} not found."
 			fi
@@ -50,29 +52,40 @@ function config_kernel() {
 		echo "Skip config initialization due SITE variable is not set."
 	fi
 
-	if [ -f "/data/cache/usr/src/linux-${KERNEL_SLUG}/.config" ]; then
-		KBUILD_OUTPUT="/data/cache/usr/src/linux-${KERNEL_SLUG}" make oldconfig
+	if [ -f "${KBUILD_OUTPUT}/.config" ]; then
+		make oldconfig
 	fi
 }
 
 function menuconfig_kernel() {
-	config_kernel
+	initconfig_kernel
 
-	KBUILD_OUTPUT="/data/cache/usr/src/linux-${KERNEL_SLUG}" make menuconfig
+	make menuconfig
 }
 
 function build_kernel() {
 	# Check that kernel config has correct settings for initramfs
-	if ! grep 'CONFIG_RD_GZIP=y' "/data/cache/usr/src/linux-${KERNEL_SLUG}/.config" >/dev/null 2>&1; then
+	if ! grep 'CONFIG_RD_GZIP=y' "${KBUILD_OUTPUT}/.config" >/dev/null 2>&1; then
 		echo "Kernel configuration must include CONFIG_RD_GZIP=y" >&2
 		exit 1
 	fi
 
-	KBUILD_OUTPUT="/data/cache/usr/src/linux-${KERNEL_SLUG}" make "-j$(nproc)"
-	KBUILD_OUTPUT="/data/cache/usr/src/linux-${KERNEL_SLUG}" INSTALL_PATH=/data/build/boot make install
+	make "-j$(nproc)"
 
-	if grep 'CONFIG_MODULES=y' "/data/cache/usr/src/linux-${KERNEL_SLUG}/.config" >/dev/null 2>&1; then
-		KBUILD_OUTPUT="/data/cache/usr/src/linux-${KERNEL_SLUG}" INSTALL_MOD_PATH=/data/cache make modules_install
+	# INSTALL_PATH=/data/build/boot make install
+	# Copy artifacts to /boot directory instead "make install"
+	if [ -n "${SITE}" ]; then
+		cp --verbose "${KBUILD_OUTPUT}/System.map "              "/data/build/boot/System.map-${KERNEL_SLUG}-${SITE}"
+		cp --verbose "${KBUILD_OUTPUT}/.config"                  "/data/build/boot/config-${KERNEL_SLUG}-${SITE}"
+		cp --verbose "${KBUILD_OUTPUT}/arch/x86_64/boot/bzImage" "/data/build/boot/vmlinuz-${KERNEL_SLUG}-${SITE}"
+	else
+		cp --verbose "${KBUILD_OUTPUT}/System.map "              "/data/build/boot/System.map-${KERNEL_SLUG}"
+		cp --verbose "${KBUILD_OUTPUT}/.config"                  "/data/build/boot/config-${KERNEL_SLUG}"
+		cp --verbose "${KBUILD_OUTPUT}/arch/x86_64/boot/bzImage" "/data/build/boot/vmlinuz-${KERNEL_SLUG}"
+	fi
+
+	if grep 'CONFIG_MODULES=y' "${KBUILD_OUTPUT}/.config" >/dev/null 2>&1; then
+		INSTALL_MOD_PATH=/data/cache make modules_install
 
 		# rm /data/cache/lib/modules/${KERNEL_SLUG}/build
 		# rm /data/cache/lib/modules/${KERNEL_SLUG}/source
@@ -80,7 +93,7 @@ function build_kernel() {
 		if [ -n "${SITE}" ]; then
 			cd /data/cache && tar --create --gzip --preserve-permissions --file="/data/build/lib-modules-${KERNEL_SLUG}-${SITE}.tar.gz" lib/modules
 		else
-			cd /data/cache && tar --create --gzip --preserve-permissions --file="/data/build/lib-modules-${KERNEL_SLUG}.tar.gz" lib/modules
+			cd /data/cache && tar --create --gzip --preserve-permissions --file="/data/build/lib-modules-${KERNEL_SLUG}.tar.gz"         lib/modules
 		fi
 	fi
 
@@ -168,8 +181,8 @@ if [ -z "$1" ]; then
 fi
 
 case "$1" in
-	config)
-		config_kernel
+	initconfig)
+		initconfig_kernel
 		;;
 	menuconfig)
 		menuconfig_kernel
@@ -187,7 +200,7 @@ case "$1" in
 		;;
 	*)
 		echo >&2
-		echo "	Available quick commands: 'config', 'menuconfig', 'kernel', 'initramfs' and 'all'" >&2
+		echo "	Available quick commands: 'initconfig', 'menuconfig', 'kernel', 'initramfs' and 'all'" >&2
 		echo >&2
 		echo >&2
 		exec /bin/busybox sh -c "$*"

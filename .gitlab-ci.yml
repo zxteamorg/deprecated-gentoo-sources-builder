@@ -98,7 +98,110 @@ amd64-builder:
     - echo "See README.md for 'docker run' command. The image ${DOCKER_IMAGE_NAME}:${VERSION_TAG_LATEST}"
     - echo "See README.md for 'docker run' command. The image ${DOCKER_IMAGE_NAME}:latest"
 
-amd64-virtualboxvm:
+
+asrockpv530aitx:
+  stage: targets
+  image:
+    name: "${CI_REGISTRY_IMAGE}/x86:${CI_COMMIT_REF_SLUG}.${CI_COMMIT_SHORT_SHA}"
+    entrypoint: ["/bin/sh", "-c"]
+  tags:
+    - docker
+  only:
+    - master
+    - tags
+  script:
+    - export SITE=asrockpv530aitx
+    - /support/docker-entrypoint.sh initconfig
+    - /support/docker-entrypoint.sh kernel
+    - /support/docker-entrypoint.sh initramfs
+    - !reference [.framework, publish_boot_artifacts]
+
+asusx402ca:
+  stage: targets
+  image:
+    name: "${CI_REGISTRY_IMAGE}/amd64:${CI_COMMIT_REF_SLUG}.${CI_COMMIT_SHORT_SHA}"
+    entrypoint: ["/bin/sh", "-c"]
+  tags:
+    - docker
+  only:
+    - master
+    - tags
+  script:
+    - export SITE=asusx402ca
+    - /support/docker-entrypoint.sh initconfig
+    - /support/docker-entrypoint.sh kernel
+    - /support/docker-entrypoint.sh initramfs
+    - !reference [.framework, publish_boot_artifacts]
+
+axx99v102a:
+  stage: targets
+  image:
+    name: "${CI_REGISTRY_IMAGE}/amd64:${CI_COMMIT_REF_SLUG}.${CI_COMMIT_SHORT_SHA}"
+    entrypoint: ["/bin/sh", "-c"]
+  tags:
+    - docker
+  only:
+    - master
+    - tags
+  script:
+    - export SITE=axx99v102a
+    - /support/docker-entrypoint.sh initconfig
+    - /support/docker-entrypoint.sh kernel
+    - /support/docker-entrypoint.sh initramfs
+    - !reference [.framework, publish_boot_artifacts]
+
+dellcs24sc:
+  stage: targets
+  image:
+    name: "${CI_REGISTRY_IMAGE}/amd64:${CI_COMMIT_REF_SLUG}.${CI_COMMIT_SHORT_SHA}"
+    entrypoint: ["/bin/sh", "-c"]
+  tags:
+    - docker
+  only:
+    - master
+    - tags
+  script:
+    - export SITE=dellcs24sc
+    - /support/docker-entrypoint.sh initconfig
+    - /support/docker-entrypoint.sh kernel
+    - /support/docker-entrypoint.sh initramfs
+    - !reference [.framework, publish_boot_artifacts]
+
+digitaloceanvm:
+  stage: targets
+  image:
+    name: "${CI_REGISTRY_IMAGE}/amd64:${CI_COMMIT_REF_SLUG}.${CI_COMMIT_SHORT_SHA}"
+    entrypoint: ["/bin/sh", "-c"]
+  tags:
+    - docker
+  only:
+    - master
+    - tags
+  script:
+    - export SITE=digitaloceanvm
+    - /support/docker-entrypoint.sh initconfig
+    - /support/docker-entrypoint.sh kernel
+    - /support/docker-entrypoint.sh initramfs
+    - !reference [.framework, publish_boot_artifacts]
+
+hp64xx:
+  stage: targets
+  image:
+    name: "${CI_REGISTRY_IMAGE}/amd64:${CI_COMMIT_REF_SLUG}.${CI_COMMIT_SHORT_SHA}"
+    entrypoint: ["/bin/sh", "-c"]
+  tags:
+    - docker
+  only:
+    - master
+    - tags
+  script:
+    - export SITE=hp64xx
+    - /support/docker-entrypoint.sh initconfig
+    - /support/docker-entrypoint.sh kernel
+    - /support/docker-entrypoint.sh initramfs
+    - !reference [.framework, publish_boot_artifacts]
+
+virtualboxvm:
   stage: targets
   image:
     name: "${CI_REGISTRY_IMAGE}/amd64:${CI_COMMIT_REF_SLUG}.${CI_COMMIT_SHORT_SHA}"

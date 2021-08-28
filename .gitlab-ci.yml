@@ -102,7 +102,7 @@ amd64-builder:
 asrockpv530aitx:
   stage: targets
   image:
-    name: "${CI_REGISTRY_IMAGE}/x86:${CI_COMMIT_REF_SLUG}.${CI_COMMIT_SHORT_SHA}"
+    name: "${CI_REGISTRY_IMAGE}/i686:${CI_COMMIT_REF_SLUG}.${CI_COMMIT_SHORT_SHA}"
     entrypoint: ["/bin/sh", "-c"]
   tags:
     - docker

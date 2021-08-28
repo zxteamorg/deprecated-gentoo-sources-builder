@@ -55,6 +55,7 @@ RUN sed -i 's/use_lvmetad = 1/use_lvmetad = 0/g' /etc/lvm/lvm.conf
 COPY BANNER /support/BANNER
 COPY misc /support/misc
 RUN echo "${KERNEL_VERSION}" > /support/KERNEL_VERSION
+RUN echo "amd64" > /support/IMAGE_ARCH
 
 RUN rm -rf /var/db
 RUN rm -rf /usr/share/man

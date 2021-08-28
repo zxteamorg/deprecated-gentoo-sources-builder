@@ -9,6 +9,29 @@ stages:
   - builders
   - targets
 
+.framework:
+  publish_boot_artifacts:
+    - IMAGE_ARCH=$(cat /support/IMAGE_ARCH)
+    - eval $(ssh-agent -s)
+    - echo "${OSFORDEV_FILE_SERVER_SSH_PRIVATE_KEY}" | tr -d '\r' | ssh-add -
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - scp -o StrictHostKeyChecking=no "/data/build/boot/System.map-${KERNEL_VERSION}-gentoo-${SITE}" "${OSFORDEV_FILE_SERVER_USER}@${OSFORDEV_FILE_SERVER_HOST}:/srv/files/osfordev/boot/${IMAGE_ARCH}/System.map-${KERNEL_VERSION}-gentoo-${SITE}"
+    - sleep 60
+    - scp -o StrictHostKeyChecking=no "/data/build/boot/config-${KERNEL_VERSION}-gentoo-${SITE}" "${OSFORDEV_FILE_SERVER_USER}@${OSFORDEV_FILE_SERVER_HOST}:/srv/files/osfordev/boot/${IMAGE_ARCH}/config-${KERNEL_VERSION}-gentoo-${SITE}"
+    - sleep 60
+    - scp -o StrictHostKeyChecking=no "/data/build/boot/vmlinuz-${KERNEL_VERSION}-gentoo-${SITE}" "${OSFORDEV_FILE_SERVER_USER}@${OSFORDEV_FILE_SERVER_HOST}:/srv/files/osfordev/boot/${IMAGE_ARCH}/vmlinuz-${KERNEL_VERSION}-gentoo-${SITE}"
+    - sleep 60
+    - scp -o StrictHostKeyChecking=no "/data/build/boot/initramfs-${KERNEL_VERSION}-gentoo-${SITE}.cpio.gz" "${OSFORDEV_FILE_SERVER_USER}@${OSFORDEV_FILE_SERVER_HOST}:/srv/files/osfordev/boot/${IMAGE_ARCH}/initramfs-${KERNEL_VERSION}-gentoo-${SITE}.cpio.gz"
+    - sleep 60
+    - ssh -o StrictHostKeyChecking=no "${OSFORDEV_FILE_SERVER_USER}@${OSFORDEV_FILE_SERVER_HOST}" "cd \"/srv/files/osfordev/boot/${IMAGE_ARCH}\"  && chmod 644 \"System.map-${KERNEL_VERSION}-gentoo-${SITE}\" \"config-${KERNEL_VERSION}-gentoo-${SITE}\" \"vmlinuz-${KERNEL_VERSION}-gentoo-${SITE}\" \"initramfs-${KERNEL_VERSION}-gentoo-${SITE}.cpio.gz\" && ln --symbolic --force --no-dereference \"System.map-${KERNEL_VERSION}-gentoo-${SITE}\" \"System.map-gentoo-${SITE}\" && ln --symbolic --force --no-dereference \"config-${KERNEL_VERSION}-gentoo-${SITE}\" \"config-gentoo-${SITE}\" && ln --symbolic --force --no-dereference \"vmlinuz-${KERNEL_VERSION}-gentoo-${SITE}\" \"vmlinuz-gentoo-${SITE}\" && ln --symbolic --force --no-dereference \"initramfs-${KERNEL_VERSION}-gentoo-${SITE}.cpio.gz\" \"initramfs-gentoo-${SITE}.cpio.gz\""
+    - sleep 1
+    - echo "System.map-${KERNEL_VERSION}-gentoo-${SITE} was published successfully."
+    - echo "config-${KERNEL_VERSION}-gentoo-${SITE} was published successfully."
+    - echo "vmlinuz-${KERNEL_VERSION}-gentoo-${SITE} was published successfully."
+    - echo "initramfs-${KERNEL_VERSION}-gentoo-${SITE}.cpio.gz was published successfully."
+    - echo "See for https://dl.zxteam.net/osfordev/boot/"
+
 i686-builder:
   stage: builders
   tags:
@@ -87,11 +110,7 @@ amd64-virtualboxvm:
     - tags
   script:
     - export SITE=virtualboxvm
-    - export ARCH=x86_64
     - /support/docker-entrypoint.sh initconfig
     - /support/docker-entrypoint.sh kernel
     - /support/docker-entrypoint.sh initramfs
-    - mv /data/build/boot ./artifacts
-  artifacts:
-    paths:
-      - "artifacts/*"
+    - !reference [.framework, publish_boot_artifacts]

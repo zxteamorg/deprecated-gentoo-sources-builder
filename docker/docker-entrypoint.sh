@@ -3,6 +3,16 @@
 
 set -e
 
+if [ ! -f /support/IMAGE_ARCH ]; then
+	echo "Look like you have wrong build container. The container should present a file /support/IMAGE_ARCH"
+	exit 1
+fi
+IMAGE_ARCH=$(cat /support/IMAGE_ARCH)
+if [ -z "${IMAGE_ARCH}" ]; then
+	echo "Look like you have wrong build container. The container should present a file /support/IMAGE_ARCH with proper arch value."
+	exit 1
+fi
+
 if [ ! -f /support/KERNEL_VERSION ]; then
 	echo "Look like you have wrong build container. The container should present a file /support/KERNEL_VERSION"
 	exit 1
@@ -74,14 +84,23 @@ function build_kernel() {
 
 	# INSTALL_PATH=/data/build/boot make install
 	# Copy artifacts to /boot directory instead "make install"
+
+	case "${IMAGE_ARCH}" in
+		i686)
+			KERNEL_ARCH=x86
+			;;
+		*)
+			KERNEL_ARCH=x86_64
+			;;
+	esac
 	if [ -n "${SITE}" ]; then
-		cp --verbose "${KBUILD_OUTPUT}/System.map"               "/data/build/boot/System.map-${KERNEL_SLUG}-${SITE}"
-		cp --verbose "${KBUILD_OUTPUT}/.config"                  "/data/build/boot/config-${KERNEL_SLUG}-${SITE}"
-		cp --verbose "${KBUILD_OUTPUT}/arch/x86_64/boot/bzImage" "/data/build/boot/vmlinuz-${KERNEL_SLUG}-${SITE}"
+		cp --verbose "${KBUILD_OUTPUT}/System.map"                       "/data/build/boot/System.map-${KERNEL_SLUG}-${SITE}"
+		cp --verbose "${KBUILD_OUTPUT}/.config"                          "/data/build/boot/config-${KERNEL_SLUG}-${SITE}"
+		cp --verbose "${KBUILD_OUTPUT}/arch/${KERNEL_ARCH}/boot/bzImage" "/data/build/boot/vmlinuz-${KERNEL_SLUG}-${SITE}"
 	else
-		cp --verbose "${KBUILD_OUTPUT}/System.map"               "/data/build/boot/System.map-${KERNEL_SLUG}"
-		cp --verbose "${KBUILD_OUTPUT}/.config"                  "/data/build/boot/config-${KERNEL_SLUG}"
-		cp --verbose "${KBUILD_OUTPUT}/arch/x86_64/boot/bzImage" "/data/build/boot/vmlinuz-${KERNEL_SLUG}"
+		cp --verbose "${KBUILD_OUTPUT}/System.map"                       "/data/build/boot/System.map-${KERNEL_SLUG}"
+		cp --verbose "${KBUILD_OUTPUT}/.config"                          "/data/build/boot/config-${KERNEL_SLUG}"
+		cp --verbose "${KBUILD_OUTPUT}/arch/${KERNEL_ARCH}/boot/bzImage" "/data/build/boot/vmlinuz-${KERNEL_SLUG}"
 	fi
 
 	if grep 'CONFIG_MODULES=y' "${KBUILD_OUTPUT}/.config" >/dev/null 2>&1; then

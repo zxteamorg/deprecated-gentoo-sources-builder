@@ -75,11 +75,11 @@ function build_kernel() {
 	# INSTALL_PATH=/data/build/boot make install
 	# Copy artifacts to /boot directory instead "make install"
 	if [ -n "${SITE}" ]; then
-		cp --verbose "${KBUILD_OUTPUT}/System.map "              "/data/build/boot/System.map-${KERNEL_SLUG}-${SITE}"
+		cp --verbose "${KBUILD_OUTPUT}/System.map"               "/data/build/boot/System.map-${KERNEL_SLUG}-${SITE}"
 		cp --verbose "${KBUILD_OUTPUT}/.config"                  "/data/build/boot/config-${KERNEL_SLUG}-${SITE}"
 		cp --verbose "${KBUILD_OUTPUT}/arch/x86_64/boot/bzImage" "/data/build/boot/vmlinuz-${KERNEL_SLUG}-${SITE}"
 	else
-		cp --verbose "${KBUILD_OUTPUT}/System.map "              "/data/build/boot/System.map-${KERNEL_SLUG}"
+		cp --verbose "${KBUILD_OUTPUT}/System.map"               "/data/build/boot/System.map-${KERNEL_SLUG}"
 		cp --verbose "${KBUILD_OUTPUT}/.config"                  "/data/build/boot/config-${KERNEL_SLUG}"
 		cp --verbose "${KBUILD_OUTPUT}/arch/x86_64/boot/bzImage" "/data/build/boot/vmlinuz-${KERNEL_SLUG}"
 	fi

@@ -29,7 +29,7 @@ RUN \
 RUN \
 	ACCEPT_LICENSE="intel-ucode linux-fw-redistributable no-source-code" \
 	FEATURES="-ipc-sandbox -network-sandbox -pid-sandbox -sandbox -usersandbox" \
-	USE="bindist static static-libs" \
+	USE="bindist -pam -shadow static static-libs" \
 	emerge --quiet --oneshot \
 		app-arch/cpio \
 		sys-apps/busybox \

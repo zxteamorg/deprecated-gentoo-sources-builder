@@ -12,24 +12,25 @@ stages:
 .framework:
   publish_boot_artifacts:
     - IMAGE_ARCH=$(cat /support/IMAGE_ARCH)
+    - if (echo "${KERNEL_VERSION}" | grep -q '-'); then KERNEL_SLUG=$(echo "${KERNEL_VERSION}" | awk -F- '{print $1 "-gentoo-" $2}'); else KERNEL_SLUG="${KERNEL_VERSION}-gentoo"; fi
     - eval $(ssh-agent -s)
     - echo "${OSFORDEV_FILE_SERVER_SSH_PRIVATE_KEY}" | tr -d '\r' | ssh-add -
     - mkdir -p ~/.ssh
     - chmod 700 ~/.ssh
-    - scp -o StrictHostKeyChecking=no "/data/build/boot/System.map-${KERNEL_VERSION}-gentoo-${SITE}" "${OSFORDEV_FILE_SERVER_USER}@${OSFORDEV_FILE_SERVER_HOST}:/srv/files/osfordev/boot/${IMAGE_ARCH}/System.map-${KERNEL_VERSION}-gentoo-${SITE}"
+    - scp -o StrictHostKeyChecking=no "/data/build/boot/System.map-${KERNEL_SLUG}-${SITE}" "${OSFORDEV_FILE_SERVER_USER}@${OSFORDEV_FILE_SERVER_HOST}:/srv/files/osfordev/boot/${IMAGE_ARCH}/System.map-${KERNEL_SLUG}-${SITE}"
     - sleep 60
-    - scp -o StrictHostKeyChecking=no "/data/build/boot/config-${KERNEL_VERSION}-gentoo-${SITE}" "${OSFORDEV_FILE_SERVER_USER}@${OSFORDEV_FILE_SERVER_HOST}:/srv/files/osfordev/boot/${IMAGE_ARCH}/config-${KERNEL_VERSION}-gentoo-${SITE}"
+    - scp -o StrictHostKeyChecking=no "/data/build/boot/config-${KERNEL_SLUG}-${SITE}" "${OSFORDEV_FILE_SERVER_USER}@${OSFORDEV_FILE_SERVER_HOST}:/srv/files/osfordev/boot/${IMAGE_ARCH}/config-${KERNEL_SLUG}-${SITE}"
     - sleep 60
-    - scp -o StrictHostKeyChecking=no "/data/build/boot/vmlinuz-${KERNEL_VERSION}-gentoo-${SITE}" "${OSFORDEV_FILE_SERVER_USER}@${OSFORDEV_FILE_SERVER_HOST}:/srv/files/osfordev/boot/${IMAGE_ARCH}/vmlinuz-${KERNEL_VERSION}-gentoo-${SITE}"
+    - scp -o StrictHostKeyChecking=no "/data/build/boot/vmlinuz-${KERNEL_SLUG}-${SITE}" "${OSFORDEV_FILE_SERVER_USER}@${OSFORDEV_FILE_SERVER_HOST}:/srv/files/osfordev/boot/${IMAGE_ARCH}/vmlinuz-${KERNEL_SLUG}-${SITE}"
     - sleep 60
-    - scp -o StrictHostKeyChecking=no "/data/build/boot/initramfs-${KERNEL_VERSION}-gentoo-${SITE}.cpio.gz" "${OSFORDEV_FILE_SERVER_USER}@${OSFORDEV_FILE_SERVER_HOST}:/srv/files/osfordev/boot/${IMAGE_ARCH}/initramfs-${KERNEL_VERSION}-gentoo-${SITE}.cpio.gz"
+    - scp -o StrictHostKeyChecking=no "/data/build/boot/initramfs-${KERNEL_SLUG}-${SITE}.cpio.gz" "${OSFORDEV_FILE_SERVER_USER}@${OSFORDEV_FILE_SERVER_HOST}:/srv/files/osfordev/boot/${IMAGE_ARCH}/initramfs-${KERNEL_SLUG}-${SITE}.cpio.gz"
     - sleep 60
-    - ssh -o StrictHostKeyChecking=no "${OSFORDEV_FILE_SERVER_USER}@${OSFORDEV_FILE_SERVER_HOST}" "cd \"/srv/files/osfordev/boot/${IMAGE_ARCH}\"  && chmod 644 \"System.map-${KERNEL_VERSION}-gentoo-${SITE}\" \"config-${KERNEL_VERSION}-gentoo-${SITE}\" \"vmlinuz-${KERNEL_VERSION}-gentoo-${SITE}\" \"initramfs-${KERNEL_VERSION}-gentoo-${SITE}.cpio.gz\" && ln --symbolic --force --no-dereference \"System.map-${KERNEL_VERSION}-gentoo-${SITE}\" \"System.map-gentoo-${SITE}\" && ln --symbolic --force --no-dereference \"config-${KERNEL_VERSION}-gentoo-${SITE}\" \"config-gentoo-${SITE}\" && ln --symbolic --force --no-dereference \"vmlinuz-${KERNEL_VERSION}-gentoo-${SITE}\" \"vmlinuz-gentoo-${SITE}\" && ln --symbolic --force --no-dereference \"initramfs-${KERNEL_VERSION}-gentoo-${SITE}.cpio.gz\" \"initramfs-gentoo-${SITE}.cpio.gz\""
+    - ssh -o StrictHostKeyChecking=no "${OSFORDEV_FILE_SERVER_USER}@${OSFORDEV_FILE_SERVER_HOST}" "cd \"/srv/files/osfordev/boot/${IMAGE_ARCH}\"  && chmod 644 \"System.map-${KERNEL_SLUG}-${SITE}\" \"config-${KERNEL_SLUG}-${SITE}\" \"vmlinuz-${KERNEL_SLUG}-${SITE}\" \"initramfs-${KERNEL_SLUG}-${SITE}.cpio.gz\" && ln --symbolic --force --no-dereference \"System.map-${KERNEL_SLUG}-${SITE}\" \"System.map-gentoo-${SITE}\" && ln --symbolic --force --no-dereference \"config-${KERNEL_SLUG}-${SITE}\" \"config-gentoo-${SITE}\" && ln --symbolic --force --no-dereference \"vmlinuz-${KERNEL_SLUG}-${SITE}\" \"vmlinuz-gentoo-${SITE}\" && ln --symbolic --force --no-dereference \"initramfs-${KERNEL_SLUG}-${SITE}.cpio.gz\" \"initramfs-gentoo-${SITE}.cpio.gz\""
     - sleep 1
-    - echo "System.map-${KERNEL_VERSION}-gentoo-${SITE} was published successfully."
-    - echo "config-${KERNEL_VERSION}-gentoo-${SITE} was published successfully."
-    - echo "vmlinuz-${KERNEL_VERSION}-gentoo-${SITE} was published successfully."
-    - echo "initramfs-${KERNEL_VERSION}-gentoo-${SITE}.cpio.gz was published successfully."
+    - echo "System.map-${KERNEL_SLUG}-${SITE} was published successfully."
+    - echo "config-${KERNEL_SLUG}-${SITE} was published successfully."
+    - echo "vmlinuz-${KERNEL_SLUG}-${SITE} was published successfully."
+    - echo "initramfs-${KERNEL_SLUG}-${SITE}.cpio.gz was published successfully."
     - echo "See for https://dl.zxteam.net/osfordev/boot/"
 
 i686-builder:

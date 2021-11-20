@@ -509,8 +509,8 @@ ln -s /proc/mounts /etc/mtab || fatal "Failure link /etc/mtab -> /proc/mounts"
 echo "Starting udev daemon..."
 /sbin/udevd --daemon --resolve-names=never
 UDEV_RC=$?
-udevadm trigger
-udevadm settle
+udevadm trigger || fatal "Failure to trigger udev daemon"
+udevadm settle || fatal "Failure to settle udev daemon"
 [ $UDEV_RC -eq 0 ] || fatal "Failed to start udev daemon. Exit code: $UDEV_RC"
 unset UDEV_RC
 
@@ -577,8 +577,6 @@ if [ -d /newroot/lib ]; then
 else
 	warn "Modules from /lib/modules/${KERNEL_RELEASE} were not synced due directory /newroot/lib is not exist."
 fi
-
-echo 1 > /proc/sys/kernel/printk
 
 # Clean up.
 umount -n /sys || fatal "Failure umount /sys"

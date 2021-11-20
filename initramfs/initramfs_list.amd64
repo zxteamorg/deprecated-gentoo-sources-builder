@@ -32,14 +32,18 @@ file    /bin/busybox                           /bin/busybox                     
 dir                                            /usr/share/udhcpc                    755 0 0
 file    /usr/share/udhcpc/default.script       /usr/share/udhcpc/default.script     755 0 0
 
-# common libs
+# Common libs
 file    /lib64/ld-linux-x86-64.so.2             /lib64/ld-linux-x86-64.so.2         755 0 0
-file    /lib64/libblkid.so.1                    /lib64/libblkid.so.1                755 0 0
-file    /lib64/libc.so.6                        /lib64/libc.so.6                    755 0 0
-file    /lib64/libdl.so.2                       /lib64/libdl.so.2                   755 0 0
+file    /lib64/libblkid.so.1.1.0                /lib64/libblkid.so.1.1.0            755 0 0
+slink   /lib64/libblkid.so.1                    /lib64/libblkid.so.1.1.0            755 0 0
+file    /lib64/libc.so.6                        /lib64/libc-2.33.so                 755 0 0
+file    /lib64/libdevmapper.so.1.02             /lib64/libdevmapper.so.1.02         755 0 0
+file    /lib64/libdl.so.2                       /lib64/librt-2.33.so                755 0 0
 file    /lib64/libkmod.so.2                     /lib64/libkmod.so.2                 755 0 0
 file    /lib64/liblzma.so.5.2.5                 /lib64/liblzma.so.5.2.5             755 0 0
 slink   /lib64/liblzma.so.5                     /lib64/liblzma.so.5.2.5             755 0 0
+file    /lib64/libm-2.33.so                     /lib64/libm-2.33.so                 755 0 0
+slink   /lib64/libm.so.6                        /lib64/libm-2.33.so                 755 0 0
 file    /lib64/libnss_compat-2.33.so            /lib64/libnss_compat-2.33.so        755 0 0
 slink   /lib64/libnss_compat.so.2               /lib64/libnss_compat-2.33.so        755 0 0
 file    /lib64/libnss_db-2.33.so                /lib64/libnss_db-2.33.so            755 0 0
@@ -50,13 +54,21 @@ file    /lib64/libnss_files-2.33.so             /lib64/libnss_files-2.33.so     
 slink   /lib64/libnss_files.so.2                /lib64/libnss_files-2.33.so         755 0 0
 file    /lib64/libnss_hesiod-2.33.so            /lib64/libnss_hesiod-2.33.so        755 0 0
 slink   /lib64/libnss_hesiod.so.2               /lib64/libnss_hesiod-2.33.so        755 0 0
-file    /lib64/libpthread.so.0                  /lib64/libpthread.so.0              755 0 0
+file    /lib64/libpthread-2.33.so               /lib64/libpthread-2.33.so           755 0 0
+slink   /lib64/libpthread.so.0                  /lib64/libpthread-2.33.so           755 0 0
 file    /lib64/libresolv-2.33.so                /lib64/libresolv-2.33.so            755 0 0
 slink   /lib64/libresolv.so.2                   /lib64/libresolv-2.33.so            755 0 0
 file    /lib64/librt-2.33.so                    /lib64/librt-2.33.so                755 0 0
 slink   /lib64/librt.so.1                       /lib64/librt-2.33.so                755 0 0
 file    /lib64/libz.so.1.2.11                   /lib64/libz.so.1.2.11               755 0 0
 slink   /lib64/libz.so.1                        /lib64/libz.so.1.2.11               755 0 0
+file    /lib64/libudev.so.1.7.2                 /lib64/libudev.so.1.7.2             755 0 0
+slink   /lib64/libudev.so.1                     /lib64/libudev.so.1.7.2             755 0 0
+
+# User libs
+file    /usr/lib64/libpopt.so.0.0.1             /usr/lib64/libpopt.so.0.0.1         755 0 0
+slink   /usr/lib64/libpopt.so.0                 /usr/lib64/libpopt.so.0.0.1         755 0 0
+slink   /usr/lib64/libpopt.so                   /usr/lib64/libpopt.so.0.0.1         755 0 0
 
 # Curl
 file    /usr/bin/curl                           /usr/bin/curl                       755 0 0
@@ -72,11 +84,12 @@ slink   /usr/lib64/libssl.so                    /usr/lib64/libssl.so.1.1        
 file    /usr/lib64/libcrypto.so.1.1             /usr/lib64/libcrypto.so.1.1         755 0 0
 slink   /usr/lib64/libcrypto.so                 /usr/lib64/libcrypto.so.1.1         755 0 0
 
-# libraries required by /sbin/fsck.ext4 and /sbin/fsck
+# Libraries required by /sbin/fsck.ext4 and /sbin/fsck
 file    /lib64/libext2fs.so.2                   /lib64/libext2fs.so.2               755 0 0
 file    /lib64/libcom_err.so.2                  /lib64/libcom_err.so.2              755 0 0
 file    /lib64/libmount.so.1                    /lib64/libmount.so.1                755 0 0
-file    /lib64/libuuid.so.1                     /lib64/libuuid.so.1                 755 0 0
+file    /lib64/libuuid.so.1.3.0                 /lib64/libuuid.so.1.3.0             755 0 0
+slink   /lib64/libuuid.so.1                     /lib64/libuuid.so.1.3.0             755 0 0
 file    /lib64/libe2p.so.2                      /lib64/libe2p.so.2                  755 0 0
 file    /sbin/e2fsck                            /sbin/e2fsck                        755 0 0
 file    /sbin/fsck                              /sbin/fsck                          755 0 0
@@ -92,6 +105,9 @@ file    /lib64/libtinfow.so.6                   /lib64/libtinfow.so.6           
 file    /lib64/libreadline.so.8                 /lib64/libreadline.so.8             755 0 0
 file    /sbin/fdisk                             /sbin/fdisk                         755 0 0
 file    /sbin/sfdisk                            /sbin/sfdisk                        755 0 0
+
+# cryptsetup
+file    libcryptsetup.so.12                     libcryptsetup.so.12                 755 0 0
 
 # LVM stuff
 dir     /etc/lvm                                                                    755 0 0
@@ -119,6 +135,9 @@ file    /sbin/mdadm                             /sbin/mdadm                     
 
 # Cryptsetup
 file    /sbin/cryptsetup                        /sbin/cryptsetup                    755 0 0
+file    /usr/lib64/libargon2.so.1               /usr/lib64/libargon2.so.1           755 0 0
+file    /usr/lib64/libjson-c.so.5               /usr/lib64/libjson-c.so.5           755 0 0
+
 
 # Dropbear SSH Server
 file    /usr/bin/dbclient                       /usr/bin/dbclient                   755 0 0

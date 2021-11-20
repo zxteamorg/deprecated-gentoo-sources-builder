@@ -23,22 +23,47 @@ RUN \
 	FEATURES="-ipc-sandbox -network-sandbox -pid-sandbox -sandbox -usersandbox" \
 	emerge --quiet =sys-kernel/gentoo-sources-${KERNEL_VERSION}
 
-# We need busybox to embed into initramfs
-# We need cpio to pack initramfs
-# We need LVM to embed into initramfs
+
+# We need udev to embed into initramfs
+RUN \
+	FEATURES="-ipc-sandbox -network-sandbox -pid-sandbox -sandbox -usersandbox" \
+	emerge --quiet --oneshot \
+		sys-fs/udev
+
+# We need intel-microcode and linux-firmware to bundle microcode. See more https://wiki.gentoo.org/wiki/Microcode
 RUN \
 	ACCEPT_LICENSE="intel-ucode linux-fw-redistributable no-source-code" \
 	FEATURES="-ipc-sandbox -network-sandbox -pid-sandbox -sandbox -usersandbox" \
-	USE="bindist -pam -shadow static static-libs" \
+	emerge --quiet --oneshot \
+		sys-firmware/intel-microcode \
+		sys-kernel/linux-firmware
+
+# We need busybox to embed into initramfs
+# We need cpio to pack initramfs
+# We need mdadm to embed into initramfs
+RUN \
+	FEATURES="-ipc-sandbox -network-sandbox -pid-sandbox -sandbox -usersandbox" \
+	USE="-pam static static-libs" \
 	emerge --quiet --oneshot \
 		app-arch/cpio \
 		sys-apps/busybox \
-		sys-firmware/intel-microcode \
-		sys-fs/cryptsetup \
-		sys-fs/lvm2 \
-		sys-fs/mdadm \
-		sys-kernel/linux-firmware
+		sys-fs/mdadm
 
+# We need LVM to embed into initramfs
+RUN \
+	FEATURES="-ipc-sandbox -network-sandbox -pid-sandbox -sandbox -usersandbox" \
+	USE="readline thin udev" \
+	emerge --quiet --oneshot \
+		sys-fs/lvm2
+
+# We need cryptsetup to embed into initramfs
+RUN \
+	FEATURES="-ipc-sandbox -network-sandbox -pid-sandbox -sandbox -usersandbox" \
+	USE="openssl udev" \
+	emerge --quiet --oneshot \
+		sys-fs/cryptsetup
+
+# We need dropbear to embed into initramfs
 RUN \
 	ACCEPT_KEYWORDS="~amd64" \
 	USE="minimal -pam -shadow static static-libs -syslog" \
@@ -71,8 +96,9 @@ COPY initramfs/uncrypt                              /support/initramfs/uncrypt
 
 COPY docker/docker-entrypoint.sh /support/docker-entrypoint.sh
 
+
+FROM scratch
+COPY --from=stage / /
 VOLUME [ "/data/build", "/data/cache" ]
-
 ENV SITE=
-
 ENTRYPOINT [ "/support/docker-entrypoint.sh" ]

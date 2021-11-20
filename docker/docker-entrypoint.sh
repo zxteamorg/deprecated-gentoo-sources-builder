@@ -71,6 +71,12 @@ function menuconfig_kernel() {
 	initconfig_kernel
 
 	make menuconfig
+
+	if [ -n "${SITE}" ]; then
+		cp --verbose "${KBUILD_OUTPUT}/.config" "/data/build/boot/config-${KERNEL_SLUG}-${SITE}"
+	else
+		cp --verbose "${KBUILD_OUTPUT}/.config" "/data/build/boot/config-${KERNEL_SLUG}"
+	fi
 }
 
 function build_kernel() {

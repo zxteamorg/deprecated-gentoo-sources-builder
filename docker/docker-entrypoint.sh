@@ -149,13 +149,110 @@ function build_initramfs() {
 	local CPIO_LIST=$(mktemp)
 	cat "/data/cache/usr/src/initramfs/initramfs_list" >> "${CPIO_LIST}"
 	echo >> "${CPIO_LIST}"
+
 	echo "file /etc/group /support/misc/group 644 0 0" >> "${CPIO_LIST}"
 	echo "file /etc/mdadm.conf /support/misc/mdadm.conf 644 0 0" >> "${CPIO_LIST}"
 	echo "file /etc/nsswitch.conf /support/misc/nsswitch.conf 644 0 0" >> "${CPIO_LIST}"
 	echo "file /etc/passwd /support/misc/passwd 644 0 0" >> "${CPIO_LIST}"
 	echo "file /init /data/cache/usr/src/initramfs/init 755 0 0" >> "${CPIO_LIST}"
 	echo "file /uncrypt /data/cache/usr/src/initramfs/uncrypt 755 0 0" >> "${CPIO_LIST}"
+	echo "file /bin/busybox /bin/busybox 755 0 0" >> "${CPIO_LIST}"
+	echo "dir /usr/share/udhcpc 755 0 0" >> "${CPIO_LIST}"
+	echo "file /usr/share/udhcpc/default.script /usr/share/udhcpc/default.script 755 0 0" >> "${CPIO_LIST}"
 	echo >> "${CPIO_LIST}"
+
+
+	echo "# Software" >> "${CPIO_LIST}"
+	SOFT_ITEMS=""
+
+	# Filesystem tools
+	SOFT_ITEMS="${SOFT_ITEMS} /sbin/e2fsck /sbin/fsck /sbin/fsck.ext4 /sbin/mkfs /sbin/mkfs.ext4 /sbin/resize2fs"
+
+	# Disk partition tools
+	SOFT_ITEMS="${SOFT_ITEMS} /sbin/fdisk /sbin/sfdisk"
+
+	# LVM stuff
+	SOFT_ITEMS="${SOFT_ITEMS} /sbin/dmsetup /sbin/lvm /sbin/lvcreate /sbin/lvdisplay /sbin/lvextend /sbin/lvremove /sbin/lvresize /sbin/lvs /sbin/pvcreate /sbin/pvdisplay /sbin/pvresize /sbin/vgchange /sbin/vgcreate /sbin/vgdisplay /sbin/vgextend /sbin/vgscan"
+	echo "dir /etc/lvm 755 0 0" >> "${CPIO_LIST}"
+	echo "file /etc/lvm/lvm.conf /etc/lvm/lvm.conf 644 0 0" >> "${CPIO_LIST}"
+
+	# Tool for running RAID systems
+	SOFT_ITEMS="${SOFT_ITEMS} /sbin/mdadm"
+	echo "file /etc/mdadm.conf /support/misc/mdadm.conf 644 0 0" >> "${CPIO_LIST}"
+
+	# Cryptsetup
+	SOFT_ITEMS="${SOFT_ITEMS} /sbin/cryptsetup"
+
+	# Dropbear SSH Server
+	SOFT_ITEMS="${SOFT_ITEMS} /usr/bin/dbclient /usr/bin/dropbearkey /usr/sbin/dropbear"
+
+	# UDEV (See for udevd location indise init script /etc/init.d/udev)
+	SOFT_ITEMS="${SOFT_ITEMS} /bin/udevadm"
+	echo "slink /bin/udevd /bin/udevadm 755 0 0" >> "${CPIO_LIST}"
+
+	case "${IMAGE_ARCH}" in
+		amd64)
+			ELF_IGNORE="linux-vdso"
+			;;
+		i686)
+			ELF_IGNORE="linux-gate"
+			;;
+		*)
+			echo "Unsupported IMAGE_ARCH: ${IMAGE_ARCH}" >&2
+			exit 62
+			;;
+	esac
+
+	declare -a LIB_ITEMS
+	for SOFT_ITEM in ${SOFT_ITEMS}; do
+		if [ -e "${SOFT_ITEM}" ]; then
+			if [ ! -L "${SOFT_ITEM}" ]; then
+				declare -a DIRECT_LIBS_ARRAY=($(ldd "${SOFT_ITEM}" 2>/dev/null | grep -v "${ELF_IGNORE}" | grep -v '=>' | awk '{print $1}'))
+				declare -a LINKED_LIBS_ARRAY=($(ldd "${SOFT_ITEM}" 2>/dev/null | grep '=>' | awk '{print $3}'))
+				for LIB in ${DIRECT_LIBS_ARRAY[@]} ${LINKED_LIBS_ARRAY[@]}; do
+					if ! (printf '%s\n' "${LIB_ITEMS[@]}" | grep -xq "${LIB}"); then
+						LIB_ITEMS+=("${LIB}")
+					fi
+				done
+			fi
+		else
+			echo "Bad soft file: ${SOFT_ITEM}" >&2
+			exit 2
+		fi
+	done
+
+	for LIB_ITEM in ${LIB_ITEMS[@]}; do
+		if [ -e "${LIB_ITEM}" ]; then
+			# Right now pass all libs as files (without symlinks)
+		 	echo "file ${LIB_ITEM} ${LIB_ITEM} 755 0 0" >> "${CPIO_LIST}"
+
+			if [ -L "${LIB_ITEM}" ]; then
+				echo "slink ${LIB_ITEM} ${LIB_ITEM} 755 0 0" >> "${CPIO_LIST}"
+			else
+				echo "file ${LIB_ITEM} ${LIB_ITEM} 755 0 0" >> "${CPIO_LIST}"
+			fi
+		else
+			echo "Bad soft file: ${LIB_ITEM}" >&2
+			exit 2
+		fi
+	done
+
+	for SOFT_ITEM in ${SOFT_ITEMS}; do
+		if [ -e "${SOFT_ITEM}" ]; then	
+			if [ -L "${SOFT_ITEM}" ]; then
+				echo "slink ${SOFT_ITEM} ${SOFT_ITEM} 755 0 0" >> "${CPIO_LIST}"
+			else
+				echo "file ${SOFT_ITEM} ${SOFT_ITEM} 755 0 0" >> "${CPIO_LIST}"
+			fi
+		else
+			echo "Bad soft file: ${SOFT_ITEM}" >&2
+			exit 2
+		fi
+	done
+
+	echo >> "${CPIO_LIST}"
+
+
 	echo "# Modules" >> "${CPIO_LIST}"
 	echo >> "${CPIO_LIST}"
 
@@ -231,3 +328,4 @@ case "$1" in
 		exec /bin/busybox sh -c "$*"
 		;;
 esac
+

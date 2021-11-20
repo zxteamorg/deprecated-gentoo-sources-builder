@@ -49,7 +49,7 @@ docker build --platform=i386 --tag "docker.registry.zxteam.net/pub/misc/gentoo-s
 
 docker build --platform=amd64 --tag "docker.registry.zxteam.net/pub/misc/gentoo-sources-builder/amd64" --build-arg KERNEL_VERSION=5.10.76-r1 --file "docker/amd64/Dockerfile" .
 ```
-
+/support/docker-entrypoint.sh initramfs
 ### Use builder image
 
 ```shell

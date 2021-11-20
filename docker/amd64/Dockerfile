@@ -23,7 +23,6 @@ RUN \
 	FEATURES="-ipc-sandbox -network-sandbox -pid-sandbox -sandbox -usersandbox" \
 	emerge --quiet =sys-kernel/gentoo-sources-${KERNEL_VERSION}
 
-
 # We need udev to embed into initramfs
 RUN \
 	FEATURES="-ipc-sandbox -network-sandbox -pid-sandbox -sandbox -usersandbox" \

@@ -273,6 +273,9 @@ function build_initramfs() {
 		MODE=$(stat -c %a $F)
 		echo "file $F $F $MODE 0 0" >> "${CPIO_LIST}"
 	done
+	# See latest /etc/init.d/udev for UDEV bins
+	echo "slink /lib/systemd/systemd-udevd /bin/udevadm 755 0 0" >> "${CPIO_LIST}"
+	
 
 	cd "/usr/src/linux"
 

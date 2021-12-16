@@ -189,6 +189,14 @@ function build_initramfs() {
 	# UDEV (See for udevd location indise init script /etc/init.d/udev)
 	SOFT_ITEMS="${SOFT_ITEMS} /bin/udevadm"
 	echo "slink /bin/udevd /bin/udevadm 755 0 0" >> "${CPIO_LIST}"
+	find /lib/udev -type d | while read D; do
+		echo "dir $D 755 0 0" >> "${CPIO_LIST}"
+	done
+	find /lib/udev -type f | while read F; do 
+		MODE=$(stat -c %a $F)
+		echo "file $F $F $MODE 0 0" >> "${CPIO_LIST}"
+	done
+
 
 	case "${IMAGE_ARCH}" in
 		amd64)
@@ -223,11 +231,10 @@ function build_initramfs() {
 
 	for LIB_ITEM in ${LIB_ITEMS[@]}; do
 		if [ -e "${LIB_ITEM}" ]; then
-			# Right now pass all libs as files (without symlinks)
-		 	echo "file ${LIB_ITEM} ${LIB_ITEM} 755 0 0" >> "${CPIO_LIST}"
-
 			if [ -L "${LIB_ITEM}" ]; then
-				echo "slink ${LIB_ITEM} ${LIB_ITEM} 755 0 0" >> "${CPIO_LIST}"
+				REAL_LIB_ITEM=$(readlink -f "${LIB_ITEM}")
+				echo "slink ${LIB_ITEM} ${REAL_LIB_ITEM} 755 0 0" >> "${CPIO_LIST}"
+				echo "file ${REAL_LIB_ITEM} ${REAL_LIB_ITEM} 755 0 0" >> "${CPIO_LIST}"
 			else
 				echo "file ${LIB_ITEM} ${LIB_ITEM} 755 0 0" >> "${CPIO_LIST}"
 			fi
@@ -265,17 +272,8 @@ function build_initramfs() {
 		done
 	fi
 
-	echo >> "${CPIO_LIST}"
-	find /lib/udev -type d | while read D; do
-		echo "dir $D 755 0 0" >> "${CPIO_LIST}"
-	done
-	find /lib/udev -type f | while read F; do 
-		MODE=$(stat -c %a $F)
-		echo "file $F $F $MODE 0 0" >> "${CPIO_LIST}"
-	done
-	# See latest /etc/init.d/udev for UDEV bins
-	echo "slink /lib/systemd/systemd-udevd /bin/udevadm 755 0 0" >> "${CPIO_LIST}"
-	
+	echo -n "${KERNEL_SLUG}-${SITE}" > /INITRAMFS_VERSION
+	echo "file /INITRAMFS_VERSION /INITRAMFS_VERSION 600 0 0" >> "${CPIO_LIST}"
 
 	cd "/usr/src/linux"
 
@@ -287,6 +285,7 @@ function build_initramfs() {
 	fi
 
 	echo "Generating initramfs file ${INITRAMFS_FILE}.cpio.gz..."
+	cp "${CPIO_LIST}" "/data/build/boot/${INITRAMFS_FILE}.gen"
 	./usr/gen_initramfs.sh -o "/data/build/boot/${INITRAMFS_FILE}.cpio.gz" "${CPIO_LIST}"
 	ln -sf "${INITRAMFS_FILE}.cpio.gz" /data/build/boot/initramfs.cpio.gz
 

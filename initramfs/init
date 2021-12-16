@@ -18,8 +18,15 @@ cat <<EOF
          / /   \  /   | |  |  \| |  | |    | |  
         / /_   /  \   | |  | |\  |  | |    | |  
        /____| /_/\_\ |___| |_| \_| |___|   |_| 
-
 EOF
+
+echo
+
+echo -n "ZX Init: "
+cat /INITRAMFS_VERSION
+echo
+
+echo
 
 
 info() {
@@ -47,8 +54,9 @@ z_dhcp() {
 	for DEV in ${FRIENDLY_ARGS}; do
 		/sbin/ip link set up "${DEV}" || fatal "z_dhcp(): Failure set UP state for device ${DEV}."
 		/sbin/udhcpc -i "${DEV}" -s /usr/share/udhcpc/default.script || fatal "z_dhcp(): Failure obtain lease for device ${DEV}." 
-		echo "pkill -f /sbin/udhcpc" >> /tmp/cleanup.sh
 	done
+
+	echo "pkill -f /sbin/udhcpc" >> /tmp/cleanup.sh
 }
 
 z_fsck() {
@@ -507,7 +515,7 @@ touch /var/log/lastlog || fatal "Failure create /var/log/lastlog"
 ln -s /proc/mounts /etc/mtab || fatal "Failure link /etc/mtab -> /proc/mounts"
 
 echo "Starting udev daemon..."
-/lib/systemd/systemd-udevd --daemon --resolve-names=never
+/bin/udevd --daemon --resolve-names=never
 UDEV_RC=$?
 udevadm trigger || fatal "Failure to trigger udev daemon"
 udevadm settle || fatal "Failure to settle udev daemon"
@@ -517,7 +525,7 @@ unset UDEV_RC
 # Prepare cleanup script
 echo "#!/bin/busybox sh" > /tmp/cleanup.sh
 echo >> /tmp/cleanup.sh
-echo "set -e" >> /tmp/cleanup.sh
+echo "set -ex" >> /tmp/cleanup.sh
 echo >> /tmp/cleanup.sh
 chmod +x /tmp/cleanup.sh || fatal "Failure make executeble cleanup script tmp/cleanup.sh"
 

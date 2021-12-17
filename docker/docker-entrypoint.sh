@@ -151,7 +151,6 @@ function build_initramfs() {
 	echo >> "${CPIO_LIST}"
 
 	echo "file /etc/group /support/misc/group 644 0 0" >> "${CPIO_LIST}"
-	echo "file /etc/mdadm.conf /support/misc/mdadm.conf 644 0 0" >> "${CPIO_LIST}"
 	echo "file /etc/nsswitch.conf /support/misc/nsswitch.conf 644 0 0" >> "${CPIO_LIST}"
 	echo "file /etc/passwd /support/misc/passwd 644 0 0" >> "${CPIO_LIST}"
 	echo "file /init /data/cache/usr/src/initramfs/init 755 0 0" >> "${CPIO_LIST}"
@@ -211,15 +210,27 @@ function build_initramfs() {
 			;;
 	esac
 
-	declare -a LIB_ITEMS
+	echo "Parsing REAL_LIB_ITEMS and SLINK_LIB_ITEMS ..."
+	declare -a REAL_LIB_ITEMS
+	declare -a SLINK_LIB_ITEMS
 	for SOFT_ITEM in ${SOFT_ITEMS}; do
 		if [ -e "${SOFT_ITEM}" ]; then
 			if [ ! -L "${SOFT_ITEM}" ]; then
 				declare -a DIRECT_LIBS_ARRAY=($(ldd "${SOFT_ITEM}" 2>/dev/null | grep -v "${ELF_IGNORE}" | grep -v '=>' | awk '{print $1}'))
 				declare -a LINKED_LIBS_ARRAY=($(ldd "${SOFT_ITEM}" 2>/dev/null | grep '=>' | awk '{print $3}'))
 				for LIB in ${DIRECT_LIBS_ARRAY[@]} ${LINKED_LIBS_ARRAY[@]}; do
-					if ! (printf '%s\n' "${LIB_ITEMS[@]}" | grep -xq "${LIB}"); then
-						LIB_ITEMS+=("${LIB}")
+					if [ -L "${LIB}" ]; then
+						if ! (printf '%s\n' "${SLINK_LIB_ITEMS[@]}" | grep -xq "${LIB}"); then
+							SLINK_LIB_ITEMS+=("${LIB}")
+						fi
+						REAL_LIB=$(readlink -f "${LIB}")
+						if ! (printf '%s\n' "${REAL_LIB_ITEMS[@]}" | grep -xq "${REAL_LIB}"); then
+							REAL_LIB_ITEMS+=("${REAL_LIB}")
+						fi
+					else
+						if ! (printf '%s\n' "${REAL_LIB_ITEMS[@]}" | grep -xq "${LIB}"); then
+							REAL_LIB_ITEMS+=("${LIB}")
+						fi
 					fi
 				done
 			fi
@@ -228,18 +239,25 @@ function build_initramfs() {
 			exit 2
 		fi
 	done
+	echo "REAL_LIB_ITEMS: ${REAL_LIB_ITEMS[@]}"
+	echo "SLINK_LIB_ITEMS: ${SLINK_LIB_ITEMS[@]}"
+	echo
 
-	for LIB_ITEM in ${LIB_ITEMS[@]}; do
-		if [ -e "${LIB_ITEM}" ]; then
-			if [ -L "${LIB_ITEM}" ]; then
-				REAL_LIB_ITEM=$(readlink -f "${LIB_ITEM}")
-				echo "slink ${LIB_ITEM} ${REAL_LIB_ITEM} 755 0 0" >> "${CPIO_LIST}"
-				echo "file ${REAL_LIB_ITEM} ${REAL_LIB_ITEM} 755 0 0" >> "${CPIO_LIST}"
-			else
-				echo "file ${LIB_ITEM} ${LIB_ITEM} 755 0 0" >> "${CPIO_LIST}"
-			fi
+
+	for REAL_LIB_ITEM in ${REAL_LIB_ITEMS[@]}; do
+		if [ -e "${REAL_LIB_ITEM}" ]; then
+			echo "file ${REAL_LIB_ITEM} ${REAL_LIB_ITEM} 755 0 0" >> "${CPIO_LIST}"
 		else
-			echo "Bad soft file: ${LIB_ITEM}" >&2
+			echo "Bad lib file: ${REAL_LIB_ITEM}" >&2
+			exit 2
+		fi
+	done
+	for SLINK_LIB_ITEM in ${SLINK_LIB_ITEMS[@]}; do
+		if [ -e "${SLINK_LIB_ITEM}" ]; then
+			REAL_LIB_ITEM=$(readlink -f "${SLINK_LIB_ITEM}")
+			echo "slink ${SLINK_LIB_ITEM} ${REAL_LIB_ITEM} 755 0 0" >> "${CPIO_LIST}"
+		else
+			echo "Bad lib file: ${SLINK_LIB_ITEM}" >&2
 			exit 2
 		fi
 	done
@@ -247,7 +265,9 @@ function build_initramfs() {
 	for SOFT_ITEM in ${SOFT_ITEMS}; do
 		if [ -e "${SOFT_ITEM}" ]; then	
 			if [ -L "${SOFT_ITEM}" ]; then
-				echo "slink ${SOFT_ITEM} ${SOFT_ITEM} 755 0 0" >> "${CPIO_LIST}"
+				REAL_SOFT_ITEM=$(readlink -f "${SOFT_ITEM}")
+				echo "slink ${SOFT_ITEM} ${REAL_SOFT_ITEM} 755 0 0" >> "${CPIO_LIST}"
+				# echo "file ${REAL_SOFT_ITEM} ${REAL_SOFT_ITEM} 755 0 0" >> "${CPIO_LIST}"
 			else
 				echo "file ${SOFT_ITEM} ${SOFT_ITEM} 755 0 0" >> "${CPIO_LIST}"
 			fi

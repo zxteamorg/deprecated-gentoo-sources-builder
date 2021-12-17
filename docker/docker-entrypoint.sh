@@ -196,6 +196,7 @@ function build_initramfs() {
 		echo "file $F $F $MODE 0 0" >> "${CPIO_LIST}"
 	done
 
+	LIB_ITEMS="/lib64/libnss_compat.so.2 /lib64/libnss_db.so.2 /lib64/libnss_dns.so.2 /lib64/libnss_files.so.2 /lib64/libnss_hesiod.so.2 /lib64/libresolv.so.2"
 
 	case "${IMAGE_ARCH}" in
 		amd64)
@@ -239,6 +240,15 @@ function build_initramfs() {
 			exit 2
 		fi
 	done
+	for LIB_ITEM in ${LIB_ITEMS}; do
+		if [ -L "${LIB_ITEM}" ]; then
+			SLINK_LIB_ITEMS+=("${LIB_ITEM}")
+			REAL_LIB=$(readlink -f "${LIB_ITEM}")
+			REAL_LIB_ITEMS+=("${REAL_LIB}")
+		else
+			REAL_LIB_ITEMS+=("${LIB}")
+		fi
+	done
 	echo "REAL_LIB_ITEMS: ${REAL_LIB_ITEMS[@]}"
 	echo "SLINK_LIB_ITEMS: ${SLINK_LIB_ITEMS[@]}"
 	echo
@@ -263,7 +273,7 @@ function build_initramfs() {
 	done
 
 	for SOFT_ITEM in ${SOFT_ITEMS}; do
-		if [ -e "${SOFT_ITEM}" ]; then	
+		if [ -e "${SOFT_ITEM}" ]; then
 			if [ -L "${SOFT_ITEM}" ]; then
 				REAL_SOFT_ITEM=$(readlink -f "${SOFT_ITEM}")
 				echo "slink ${SOFT_ITEM} ${REAL_SOFT_ITEM} 755 0 0" >> "${CPIO_LIST}"

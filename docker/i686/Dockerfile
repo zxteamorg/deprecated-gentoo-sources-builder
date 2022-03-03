@@ -17,22 +17,25 @@ ARG KERNEL_VERSION=
 # Copy the portage tree into the current stage
 COPY --from=portage /var/db /var/db
 
+RUN echo 'ACCEPT_LICENSE="*"' >> /etc/portage/make.conf
+RUN echo 'FEATURES="-ipc-sandbox -network-sandbox -pid-sandbox -sandbox -usersandbox"' >> /etc/portage/make.conf
+RUN echo 'EMERGE_DEFAULT_OPTS="--jobs 3"' >> /etc/portage/make.conf
+RUN echo "MAKEOPTS=\"-j$(nproc)\"" >> /etc/portage/make.conf
+
+RUN cat /etc/portage/make.conf
+
 # Install kernel sources
 RUN test -n "${KERNEL_VERSION}" || { echo "KERNEL_VERSION is not set" >&2; exit 1; }
 RUN \
-	FEATURES="-ipc-sandbox -network-sandbox -pid-sandbox -sandbox -usersandbox" \
 	emerge --quiet =sys-kernel/gentoo-sources-${KERNEL_VERSION}
 
 # We need udev to embed into initramfs
 RUN \
-	FEATURES="-ipc-sandbox -network-sandbox -pid-sandbox -sandbox -usersandbox" \
 	emerge --quiet --oneshot \
 		sys-fs/udev
 
 # We need intel-microcode and linux-firmware to bundle microcode. See more https://wiki.gentoo.org/wiki/Microcode
 RUN \
-	ACCEPT_LICENSE="intel-ucode linux-fw-redistributable no-source-code" \
-	FEATURES="-ipc-sandbox -network-sandbox -pid-sandbox -sandbox -usersandbox" \
 	emerge --quiet --oneshot \
 		sys-firmware/intel-microcode \
 		sys-kernel/linux-firmware
@@ -41,8 +44,6 @@ RUN \
 # We need cpio to pack initramfs
 # We need mdadm to embed into initramfs
 RUN \
-	ACCEPT_LICENSE="intel-ucode linux-fw-redistributable no-source-code" \
-	FEATURES="-ipc-sandbox -network-sandbox -pid-sandbox -sandbox -usersandbox" \
 	USE="-pam static static-libs" \
 	emerge --quiet --oneshot \
 		app-arch/cpio \
@@ -51,14 +52,12 @@ RUN \
 
 # We need LVM to embed into initramfs
 RUN \
-	FEATURES="-ipc-sandbox -network-sandbox -pid-sandbox -sandbox -usersandbox" \
 	USE="readline thin udev" \
 	emerge --quiet --oneshot \
 		sys-fs/lvm2
 
 # We need cryptsetup to embed into initramfs
 RUN \
-	FEATURES="-ipc-sandbox -network-sandbox -pid-sandbox -sandbox -usersandbox" \
 	USE="openssl udev" \
 	emerge --quiet --oneshot \
 		sys-fs/cryptsetup
@@ -67,7 +66,6 @@ RUN \
 RUN \
 	ACCEPT_KEYWORDS="~x86" \
 	USE="minimal -pam -shadow static static-libs -syslog" \
-	FEATURES="-ipc-sandbox -network-sandbox -pid-sandbox -sandbox -usersandbox" \
 	emerge --quiet --oneshot \
 		dropbear
 
@@ -96,6 +94,13 @@ COPY initramfs/uncrypt                              /support/initramfs/uncrypt
 
 COPY docker/docker-entrypoint.sh /support/docker-entrypoint.sh
 
+RUN \
+  rm -rf /run/*; \
+  rm -rf /tmp/*; \
+  rm -rf /var/cache/*; \
+  rm -rf /var/db/repos/*; \
+  rm -rf /var/log/*; \
+  rm -rf /var/tmp/*
 
 FROM scratch
 COPY --from=stage / /

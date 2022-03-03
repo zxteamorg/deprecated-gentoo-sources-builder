@@ -77,13 +77,13 @@ docker run --rm --interactive --tty \
   --mount type=bind,source="${PWD}/.${SITE}",target=/data/build \
   --volume "${ARCH}-${SITE}-cache":/data/cache \
   --env SITE \
-  "docker.registry.zxteam.net/pub/misc/gentoo-sources-builder/${ARCH}" \
+  "ghcr.io/zxteamorg/deprecated-gentoo-sources-builder:amd64-202203030452-5.10.100" \
     menuconfig
 docker run --rm --interactive --tty \
   --mount type=bind,source="${PWD}/.${SITE}",target=/data/build \
   --volume "${ARCH}-${SITE}-cache":/data/cache \
   --env SITE \
-  "docker.registry.zxteam.net/pub/misc/gentoo-sources-builder/${ARCH}" \
+  "ghcr.io/zxteamorg/deprecated-gentoo-sources-builder:amd64-202203030452-5.10.100" \
     kernel
 
 

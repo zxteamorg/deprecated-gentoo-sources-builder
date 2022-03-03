@@ -121,7 +121,7 @@ jobs:
           docker push "ghcr.io/zxteamorg/deprecated-gentoo-sources-builder:${DOCKER_TAG}-${GITHUB_REF_NAME}.${GITHUB_SHA_TINY}-${KERNEL_VERSION}"
           docker push "ghcr.io/zxteamorg/deprecated-gentoo-sources-builder:${DOCKER_TAG}-${YYYYMMDDHHMM}-${KERNEL_VERSION}"
           mkdir --parents "/tmp/.docker-cache"
-          docker save --output "/tmp/.docker-cache/${DOCKER_TAG}-${YYYYMMDDHHMM}-${KERNEL_VERSION}.tar" "ghcr.io/osfordev/kernel:${DOCKER_TAG}-${YYYYMMDDHHMM}-${KERNEL_VERSION}"
+          docker save --output "/tmp/.docker-cache/${DOCKER_TAG}-${YYYYMMDDHHMM}-${KERNEL_VERSION}.tar" "ghcr.io/zxteamorg/deprecated-gentoo-sources-builder:${DOCKER_TAG}-${YYYYMMDDHHMM}-${KERNEL_VERSION}"
 
   # build-kernels:
   #   needs: [configure,build-images]

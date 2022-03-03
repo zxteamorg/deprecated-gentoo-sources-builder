@@ -45,9 +45,9 @@ docker pull docker.registry.zxteam.net/pub/misc/gentoo-sources-builder/amd64
 Or build locally yourself
 
 ```shell
-docker build --platform=i386 --tag "docker.registry.zxteam.net/pub/misc/gentoo-sources-builder/i686" --build-arg KERNEL_VERSION=5.10.76-r1 --file "docker/i686/Dockerfile" .
+docker build --platform=i386 --tag "docker.registry.zxteam.net/pub/misc/gentoo-sources-builder/i686" --build-arg KERNEL_VERSION=5.10.100 --file "docker/i686/Dockerfile" .
 
-docker build --platform=amd64 --tag "docker.registry.zxteam.net/pub/misc/gentoo-sources-builder/amd64" --build-arg KERNEL_VERSION=5.10.76-r1 --file "docker/amd64/Dockerfile" .
+docker build --platform=amd64 --tag "docker.registry.zxteam.net/pub/misc/gentoo-sources-builder/amd64" --build-arg KERNEL_VERSION=5.10.100 --file "docker/amd64/Dockerfile" .
 ```
 /support/docker-entrypoint.sh initramfs
 ### Use builder image

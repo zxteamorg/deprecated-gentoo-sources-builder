@@ -1,0 +1,228 @@
+name: Build Docker Image And Kernels
+
+on:
+  push:
+    branches:
+      - '*'
+  workflow_dispatch:
+
+jobs:
+  configure:
+    runs-on: ubuntu-latest
+    outputs:
+      gentoo-archs: ${{ steps.generate-gentoo-archs.outputs.gentoo_archs }}
+      kernels: ${{ steps.generate-kernels.outputs.kernels }}
+      build_date_yyyymmddhhmm: ${{ steps.generate-build_date_yyyymmddhhmm.outputs.build_date_yyyymmddhhmm }}
+    steps:
+      # - uses: actions/setup-python@v2
+      #   with:
+      #     python-version: '3.x' # Version range or exact version of a Python version to use, using SemVer's version range syntax
+
+      # - name: Checkout Sources (Current) Branch
+      #   uses: actions/checkout@v2
+      #   with:
+      #     path: src
+
+      # - name: Checkout Binary Branch
+      #   uses: actions/checkout@v2
+      #   with:
+      #     path: binary
+      #     ref: binary
+
+      - id: generate-gentoo-archs
+        run: |
+          echo '::set-output name=gentoo_archs::["amd64","i686"]'
+
+      - id: generate-kernels
+        run: |
+          echo '::set-output name=kernels::["5.10.100","5.15.23"]'
+
+      - id: generate-build_date_yyyymmddhhmm
+        run: |
+          YYYYMMDDHHMM=$(date -u '+%Y%m%d%H%M')
+          echo "::set-output name=build_date_yyyymmddhhmm::${YYYYMMDDHHMM}"
+
+  build-images:
+    needs: configure
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        gentoo-arch: ${{fromJson(needs.configure.outputs.gentoo-archs)}}
+        kernel: ${{fromJson(needs.configure.outputs.kernels)}}
+    steps:
+      - name: Prepare
+        id: prepare
+        run: |
+          KERNEL_VERSION="${{ matrix.kernel }}"
+          DOCKER_TAG="${{ matrix.gentoo-arch }}"
+          case "${{ matrix.gentoo-arch }}" in
+            i686)
+              DOCKER_PLATFORM="linux/i386"
+              ;;
+            amd64)
+              DOCKER_PLATFORM="linux/amd64"
+              ;;
+            *)
+              echo "Cannot resolve docker platform by Genoo arch: ${{ matrix.gentoo-arch }}" >&2
+              exit 1
+              ;;
+          esac
+          echo "::set-output name=KERNEL_VERSION::${KERNEL_VERSION}"
+          echo "::set-output name=DOCKER_TAG::${DOCKER_TAG}"
+          echo "::set-output name=DOCKER_PLATFORM::${DOCKER_PLATFORM}"
+
+      # See https://github.com/docker/setup-qemu-action
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v1
+
+      # # See https://github.com/docker/login-action
+      # - name: Login to ZXTeam's GitLab
+      #   uses: docker/login-action@v1
+      #   with:
+      #     registry: docker.registry.zxteam.net
+      #     username: ${{ secrets.DOCKER_REGISTRY_ZXTEAM_USERNAME }}
+      #     password: ${{ secrets.DOCKER_REGISTRY_ZXTEAM_TOKEN }}
+
+      # See https://github.com/docker/login-action
+      - name: Log In To The GitHub Container Registry
+        uses: docker/login-action@v1
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Setup Cache
+        uses: actions/cache@v2
+        id: cache
+        with:
+          path: /tmp/.docker-cache
+          key: docker-cache-${{ steps.prepare.outputs.DOCKER_TAG }}-${{needs.configure.outputs.build_date_yyyymmddhhmm}}-${{ steps.prepare.outputs.KERNEL_VERSION }}-${GITHUB_SHA}
+
+      - name: Build Image
+        run: |
+          KERNEL_VERSION="${{ steps.prepare.outputs.KERNEL_VERSION }}"
+          DOCKER_TAG="${{ steps.prepare.outputs.DOCKER_TAG }}"
+          DOCKER_PLATFORM="${{ steps.prepare.outputs.DOCKER_PLATFORM }}"
+          YYYYMMDDHHMM="${{needs.configure.outputs.build_date_yyyymmddhhmm}}"
+          GITHUB_SHA_TINY=$(echo "${GITHUB_SHA}" | head -c 8)
+          set -x
+          DOCKER_BUILDKIT=1 docker build \
+            --progress plain \
+            --platform "${DOCKER_PLATFORM}" \
+            --tag "image-${GITHUB_JOB}" \
+            --tag "ghcr.io/zxteamorg/deprecated-gentoo-sources-builder:${DOCKER_TAG}-${GITHUB_REF_NAME}.${GITHUB_SHA_TINY}-${KERNEL_VERSION}" \
+            --tag "ghcr.io/zxteamorg/deprecated-gentoo-sources-builder:${DOCKER_TAG}-${YYYYMMDDHHMM}-${KERNEL_VERSION}" \
+            --build-arg "KERNEL_VERSION=${KERNEL_VERSION}" \
+            --file "docker/${{ matrix.gentoo-arch }}/Dockerfile" \
+            .
+          docker push "ghcr.io/zxteamorg/deprecated-gentoo-sources-builder:${DOCKER_TAG}-${GITHUB_REF_NAME}.${GITHUB_SHA_TINY}-${KERNEL_VERSION}"
+          docker push "ghcr.io/zxteamorg/deprecated-gentoo-sources-builder:${DOCKER_TAG}-${YYYYMMDDHHMM}-${KERNEL_VERSION}"
+          mkdir --parents "/tmp/.docker-cache"
+          docker save --output "/tmp/.docker-cache/${DOCKER_TAG}-${YYYYMMDDHHMM}-${KERNEL_VERSION}.tar" "ghcr.io/osfordev/kernel:${DOCKER_TAG}-${YYYYMMDDHHMM}-${KERNEL_VERSION}"
+
+  # build-kernels:
+  #   needs: [configure,build-images]
+  #   runs-on: ubuntu-latest
+  #   if: ${{ needs.configure.outputs.kernels_to_build != '[]' }}
+  #   strategy:
+  #     matrix:
+  #       kernel_to_build: ${{fromJson(needs.configure.outputs.kernels_to_build)}}
+  #   steps:
+  #     - name: Prepare
+  #       id: prepare
+  #       run: |
+  #         KERNEL_VERSION=$(echo ${{ matrix.kernel_to_build }} | cut -d: -f2)
+  #         DOCKER_TAG=$(echo ${{ matrix.kernel_to_build }} | cut -d: -f3)
+  #         echo "::set-output name=KERNEL_VERSION::${KERNEL_VERSION}"
+  #         echo "::set-output name=DOCKER_TAG::${DOCKER_TAG}"
+
+  #     # See https://github.com/docker/setup-qemu-action
+  #     - name: Set up QEMU
+  #       uses: docker/setup-qemu-action@v1
+
+  #     - name: Checkout Sources (Current) Branch
+  #       uses: actions/checkout@v2
+  #       with:
+  #         path: src
+
+  #     - name: Checkout Binary Branch
+  #       uses: actions/checkout@v2
+  #       with:
+  #         ref: binary
+
+  #     - name: Setup Cache
+  #       uses: actions/cache@v2
+  #       id: cache
+  #       with:
+  #         path: /tmp/.docker-cache
+  #         key: docker-cache-${{ steps.prepare.outputs.DOCKER_TAG }}-${{needs.configure.outputs.build_date_yyyymmddhhmm}}-${{ steps.prepare.outputs.KERNEL_VERSION }}-${GITHUB_SHA}
+
+  #     - name: Load Docker Image If Exists
+  #       if: steps.cache.outputs.cache-hit == 'true'
+  #       run: |
+  #         KERNEL_VERSION=$(echo ${{ matrix.kernel_to_build }} | cut -d: -f2)
+  #         DOCKER_TAG=$(echo ${{ matrix.kernel_to_build }} | cut -d: -f3)
+  #         YYYYMMDDHHMM="${{needs.configure.outputs.build_date_yyyymmddhhmm}}"
+  #         ls -l /tmp/.docker-cache
+  #         docker load --input "/tmp/.docker-cache/${DOCKER_TAG}-${YYYYMMDDHHMM}-${KERNEL_VERSION}.tar"
+
+  #     - name: Build Kernel
+  #       run: |
+  #         set -x
+  #         SITE=$(echo ${{ matrix.kernel_to_build }} | cut -d: -f1)
+  #         KERNEL_VERSION=$(echo ${{ matrix.kernel_to_build }} | cut -d: -f2)
+  #         DOCKER_TAG=$(echo ${{ matrix.kernel_to_build }} | cut -d: -f3)
+  #         DOCKER_PLATFORM=$(echo ${{ matrix.kernel_to_build }} | cut -d: -f4)
+  #         YYYYMMDDHHMM="${{needs.configure.outputs.build_date_yyyymmddhhmm}}"
+  #         mkdir --parents "${PWD}/.artifacts/${SITE}/${DOCKER_TAG}"
+  #         DOCKER_BUILDKIT=1 docker run \
+  #           --platform "${DOCKER_PLATFORM}" \
+  #           --rm \
+  #           --interactive \
+  #           --mount type=bind,source="${PWD}/.artifacts/${SITE}/${DOCKER_TAG}",target=/data/build \
+  #           --volume "osfordev-kernel-cache":/data/cache \
+  #           --env SITE="${SITE}" \
+  #           "ghcr.io/osfordev/kernel:${DOCKER_TAG}-${YYYYMMDDHHMM}-${KERNEL_VERSION}" \
+  #             compile
+  #         rm "${PWD}/.artifacts/${SITE}/${DOCKER_TAG}/.config"
+
+  #     - name: Upload Built Stuff To Artifacts
+  #       uses: actions/upload-artifact@v2
+  #       with:
+  #         name: artifacts
+  #         path: .artifacts
+  #         retention-days: 1
+
+  # publish-binaries:
+  #   needs: [configure,build-kernels]
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Checkout Binary Branch
+  #       uses: actions/checkout@v2
+  #       with:
+  #         path: binary
+  #         ref: binary
+
+  #     - name: Retrieve Artifacts
+  #       uses: actions/download-artifact@v2
+  #       with:
+  #         name: artifacts
+  #         path: .artifacts
+
+  #     - name: Update Binaries
+  #       run: |
+  #         cp -rlf .artifacts/* ./binary/
+
+  #     - name: Push Binary Branch
+  #       run: |
+  #         YYYYMMDDHHMM="${{needs.configure.outputs.build_date_yyyymmddhhmm}}"
+  #         cd binary
+  #         git config user.name github-actions
+  #         git config user.email github-actions@github.com
+  #         git add --all
+  #         git status
+  #         git commit --amend --no-edit
+  #         git push --force

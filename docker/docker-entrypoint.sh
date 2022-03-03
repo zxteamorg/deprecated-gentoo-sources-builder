@@ -283,6 +283,8 @@ function build_initramfs() {
 		INITRAMFS_FILE="initramfs-${KERNEL_SLUG}"
 	fi
 
+	cp "${CPIO_LIST}" "/data/build/boot/${INITRAMFS_FILE}.cpiolist"
+
 	echo "Generating initramfs file ${INITRAMFS_FILE}.cpio.gz..."
 	./usr/gen_initramfs.sh -o "/data/build/boot/${INITRAMFS_FILE}.cpio.gz" "${CPIO_LIST}"
 	ln -sf "${INITRAMFS_FILE}.cpio.gz" /data/build/boot/initramfs.cpio.gz

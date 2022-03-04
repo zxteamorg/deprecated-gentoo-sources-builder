@@ -54,7 +54,6 @@ jobs:
         id: prepare
         run: |
           KERNEL_VERSION="${{ matrix.kernel }}"
-          DOCKER_TAG="${{ matrix.gentoo-arch }}"
           case "${{ matrix.gentoo-arch }}" in
             i686)
               DOCKER_PLATFORM="linux/i386"
@@ -68,7 +67,6 @@ jobs:
               ;;
           esac
           echo "::set-output name=KERNEL_VERSION::${KERNEL_VERSION}"
-          echo "::set-output name=DOCKER_TAG::${DOCKER_TAG}"
           echo "::set-output name=DOCKER_PLATFORM::${DOCKER_PLATFORM}"
 
       # See https://github.com/docker/setup-qemu-action
@@ -99,7 +97,7 @@ jobs:
         id: cache
         with:
           path: /tmp/.docker-cache
-          key: docker-cache-${{ steps.prepare.outputs.DOCKER_TAG }}-${{needs.configure.outputs.build_date_yyyymmddhhmm}}-${{ steps.prepare.outputs.KERNEL_VERSION }}-${GITHUB_SHA}
+          key: docker-cache-${{ matrix.gentoo-arch }}-${{needs.configure.outputs.build_date_yyyymmddhhmm}}-${{ matrix.kernel }}-${GITHUB_SHA}
 
       - name: Build Image
         run: |
@@ -113,15 +111,17 @@ jobs:
             --progress plain \
             --platform "${DOCKER_PLATFORM}" \
             --tag "image-${GITHUB_JOB}" \
-            --tag "ghcr.io/zxteamorg/deprecated-gentoo-sources-builder:${DOCKER_TAG}-${GITHUB_REF_NAME}.${GITHUB_SHA_TINY}-${KERNEL_VERSION}" \
-            --tag "ghcr.io/zxteamorg/deprecated-gentoo-sources-builder:${DOCKER_TAG}-${YYYYMMDDHHMM}-${KERNEL_VERSION}" \
-            --build-arg "KERNEL_VERSION=${KERNEL_VERSION}" \
+            --tag "ghcr.io/zxteamorg/deprecated-gentoo-sources-builder/${{ matrix.gentoo-arch }}/${{ matrix.kernel }}:${GITHUB_REF_NAME}.${GITHUB_SHA_TINY}" \
+            --tag "ghcr.io/zxteamorg/deprecated-gentoo-sources-builder/${{ matrix.gentoo-arch }}/${{ matrix.kernel }}:${GITHUB_REF_NAME}" \
+            --tag "ghcr.io/zxteamorg/deprecated-gentoo-sources-builder/${{ matrix.gentoo-arch }}/${{ matrix.kernel }}:latest" \
+            --build-arg "KERNEL_VERSION=${{ matrix.kernel }}" \
             --file "docker/${{ matrix.gentoo-arch }}/Dockerfile" \
             .
-          docker push "ghcr.io/zxteamorg/deprecated-gentoo-sources-builder:${DOCKER_TAG}-${GITHUB_REF_NAME}.${GITHUB_SHA_TINY}-${KERNEL_VERSION}"
-          docker push "ghcr.io/zxteamorg/deprecated-gentoo-sources-builder:${DOCKER_TAG}-${YYYYMMDDHHMM}-${KERNEL_VERSION}"
-          mkdir --parents "/tmp/.docker-cache"
-          docker save --output "/tmp/.docker-cache/${DOCKER_TAG}-${YYYYMMDDHHMM}-${KERNEL_VERSION}.tar" "ghcr.io/zxteamorg/deprecated-gentoo-sources-builder:${DOCKER_TAG}-${YYYYMMDDHHMM}-${KERNEL_VERSION}"
+          docker push "ghcr.io/zxteamorg/deprecated-gentoo-sources-builder/${{ matrix.gentoo-arch }}/${{ matrix.kernel }}:${GITHUB_REF_NAME}.${GITHUB_SHA_TINY}"
+          docker push "ghcr.io/zxteamorg/deprecated-gentoo-sources-builder/${{ matrix.gentoo-arch }}/${{ matrix.kernel }}:${GITHUB_REF_NAME}"
+          docker push "ghcr.io/zxteamorg/deprecated-gentoo-sources-builder/${{ matrix.gentoo-arch }}/${{ matrix.kernel }}:latest"
+          mkdir --parents "/tmp/.docker-cache/${{ matrix.gentoo-arch }}/${{ matrix.kernel }}"
+          docker save --output "/tmp/.docker-cache/${{ matrix.gentoo-arch }}/${{ matrix.kernel }}/${GITHUB_REF_NAME}.${GITHUB_SHA_TINY}.tar" "ghcr.io/zxteamorg/deprecated-gentoo-sources-builder/${{ matrix.gentoo-arch }}/${{ matrix.kernel }}:${GITHUB_REF_NAME}.${GITHUB_SHA_TINY}"
 
   # build-kernels:
   #   needs: [configure,build-images]
@@ -167,7 +167,7 @@ jobs:
   #         DOCKER_TAG=$(echo ${{ matrix.kernel_to_build }} | cut -d: -f3)
   #         YYYYMMDDHHMM="${{needs.configure.outputs.build_date_yyyymmddhhmm}}"
   #         ls -l /tmp/.docker-cache
-  #         docker load --input "/tmp/.docker-cache/${DOCKER_TAG}-${YYYYMMDDHHMM}-${KERNEL_VERSION}.tar"
+  #         docker load --input "/tmp/.docker-cache/${{ matrix.gentoo-arch }}/${{ matrix.kernel }}/${GITHUB_REF_NAME}.${GITHUB_SHA_TINY}.tar"
 
   #     - name: Build Kernel
   #       run: |

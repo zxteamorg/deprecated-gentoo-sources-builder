@@ -151,7 +151,6 @@ function build_initramfs() {
 	echo >> "${CPIO_LIST}"
 
 	echo "file /etc/group /support/misc/group 644 0 0" >> "${CPIO_LIST}"
-	echo "file /etc/mdadm.conf /support/misc/mdadm.conf 644 0 0" >> "${CPIO_LIST}"
 	echo "file /etc/nsswitch.conf /support/misc/nsswitch.conf 644 0 0" >> "${CPIO_LIST}"
 	echo "file /etc/passwd /support/misc/passwd 644 0 0" >> "${CPIO_LIST}"
 	echo "file /init /data/cache/usr/src/initramfs/init 755 0 0" >> "${CPIO_LIST}"
@@ -165,11 +164,14 @@ function build_initramfs() {
 	echo "# Software" >> "${CPIO_LIST}"
 	SOFT_ITEMS=""
 
+	# LDD
+	SOFT_ITEMS="${SOFT_ITEMS} /usr/bin/ldd"
+
 	# Filesystem tools
-	SOFT_ITEMS="${SOFT_ITEMS} /sbin/e2fsck /sbin/fsck /sbin/fsck.ext4 /sbin/mkfs /sbin/mkfs.ext4 /sbin/resize2fs"
+	SOFT_ITEMS="${SOFT_ITEMS} /sbin/e2fsck /sbin/fsck /sbin/fsck.ext4 /sbin/mke2fs /sbin/mkfs /sbin/mkfs.ext4 /sbin/resize2fs"
 
 	# Disk partition tools
-	SOFT_ITEMS="${SOFT_ITEMS} /sbin/fdisk /sbin/sfdisk"
+	SOFT_ITEMS="${SOFT_ITEMS} /sbin/fdisk /sbin/sfdisk /usr/sbin/gdisk /usr/sbin/parted"
 
 	# LVM stuff
 	SOFT_ITEMS="${SOFT_ITEMS} /sbin/dmsetup /sbin/lvm /sbin/lvcreate /sbin/lvdisplay /sbin/lvextend /sbin/lvremove /sbin/lvresize /sbin/lvs /sbin/pvcreate /sbin/pvdisplay /sbin/pvresize /sbin/vgchange /sbin/vgcreate /sbin/vgdisplay /sbin/vgextend /sbin/vgscan"
@@ -213,6 +215,13 @@ function build_initramfs() {
 					if ! (printf '%s\n' "${LIB_ITEMS[@]}" | grep -xq "${LIB}"); then
 						LIB_ITEMS+=("${LIB}")
 					fi
+
+					if [ -L "${LIB}" ]; then
+						TARGET_LIB=$(readlink -f "${LIB}")
+						if ! (printf '%s\n' "${LIB_ITEMS[@]}" | grep -xq "${TARGET_LIB}"); then
+							LIB_ITEMS+=("${TARGET_LIB}")
+						fi
+					fi
 				done
 			fi
 		else
@@ -223,11 +232,12 @@ function build_initramfs() {
 
 	for LIB_ITEM in ${LIB_ITEMS[@]}; do
 		if [ -e "${LIB_ITEM}" ]; then
-			# Right now pass all libs as files (without symlinks)
-		 	echo "file ${LIB_ITEM} ${LIB_ITEM} 755 0 0" >> "${CPIO_LIST}"
+			# # Right now pass all libs as files (without symlinks)
+		 	# echo "file ${LIB_ITEM} ${LIB_ITEM} 755 0 0" >> "${CPIO_LIST}"
 
 			if [ -L "${LIB_ITEM}" ]; then
-				echo "slink ${LIB_ITEM} ${LIB_ITEM} 755 0 0" >> "${CPIO_LIST}"
+				TARGET_LIB_ITEM=$(readlink -f "${LIB_ITEM}")
+				echo "slink ${LIB_ITEM} ${TARGET_LIB_ITEM} 755 0 0" >> "${CPIO_LIST}"
 			else
 				echo "file ${LIB_ITEM} ${LIB_ITEM} 755 0 0" >> "${CPIO_LIST}"
 			fi
@@ -238,9 +248,10 @@ function build_initramfs() {
 	done
 
 	for SOFT_ITEM in ${SOFT_ITEMS}; do
-		if [ -e "${SOFT_ITEM}" ]; then	
+		if [ -e "${SOFT_ITEM}" ]; then
 			if [ -L "${SOFT_ITEM}" ]; then
-				echo "slink ${SOFT_ITEM} ${SOFT_ITEM} 755 0 0" >> "${CPIO_LIST}"
+				TARGET_SOFT_ITEM=$(readlink -f "${SOFT_ITEM}")
+				echo "slink ${SOFT_ITEM} ${TARGET_SOFT_ITEM} 755 0 0" >> "${CPIO_LIST}"
 			else
 				echo "file ${SOFT_ITEM} ${SOFT_ITEM} 755 0 0" >> "${CPIO_LIST}"
 			fi

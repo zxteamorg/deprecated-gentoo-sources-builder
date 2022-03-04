@@ -59,7 +59,7 @@ RUN \
 # We need cryptsetup to embed into initramfs
 RUN \
 	USE="openssl udev" \
-	emerge --quiet --oneshot \
+	emerge --quiet \
 		sys-fs/cryptsetup
 
 # We need dropbear to embed into initramfs
@@ -68,6 +68,12 @@ RUN \
 	USE="minimal -pam -shadow static static-libs -syslog" \
 	emerge --quiet \
 		dropbear
+
+# GPT disk tools
+RUN \
+	emerge --quiet \
+		sys-apps/gptfdisk \
+		sys-block/parted
 
 RUN eselect kernel set 1
 

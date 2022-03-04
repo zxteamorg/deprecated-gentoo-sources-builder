@@ -9,48 +9,39 @@
 This image based on Gentoo stage3 with additionally emerged packages to make abillity to compile Gentoo Sources Kernel in few commands on a Docker Host.
 
 
-## Quick Start
-
-```bash
-docker run --rm --interactive --tty --volume $(pwd):/data [--env SITE=hp64xx] zxteamorg/gentoo-sources-builder kernel
-```
-
-See directory `sites` for the SITE variable.
-
 ## What the image includes
 
 TBD
-
-
 
 ## Dev notes
 
 ### Prepare builder images
 
-You may use CI images:
+#### Option: Pull image
 
-  * docker.registry.zxteam.net/pub/misc/gentoo-sources-builder/i686
-  * docker.registry.zxteam.net/pub/misc/gentoo-sources-builder/i686:master
-  * docker.registry.zxteam.net/pub/misc/gentoo-sources-builder/i686:master.xxxxxx
-  * docker.registry.zxteam.net/pub/misc/gentoo-sources-builder/amd64
-  * docker.registry.zxteam.net/pub/misc/gentoo-sources-builder/amd64:master
-  * docker.registry.zxteam.net/pub/misc/gentoo-sources-builder/amd64:master.xxxxxx
+  * ghcr.io/zxteamorg/deprecated-gentoo-sources-builder/i686/X.Y.Z
+  * ghcr.io/zxteamorg/deprecated-gentoo-sources-builder/i686/X.Y.Z:master
+  * ghcr.io/zxteamorg/deprecated-gentoo-sources-builder/i686/X.Y.Z:master.xxxxxx
+  * ghcr.io/zxteamorg/deprecated-gentoo-sources-builder/amd64/X.Y.Z
+  * ghcr.io/zxteamorg/deprecated-gentoo-sources-builder/amd64/X.Y.Z:master
+  * ghcr.io/zxteamorg/deprecated-gentoo-sources-builder/amd64/X.Y.Z:master.xxxxxx
 
+where `X.Y.Z` is kernel version.
+
+For example:
 ```shell
-docker login docker.registry.zxteam.net
-docker pull docker.registry.zxteam.net/pub/misc/gentoo-sources-builder/i686
-docker pull docker.registry.zxteam.net/pub/misc/gentoo-sources-builder/amd64
+docker pull ghcr.io/zxteamorg/deprecated-gentoo-sources-builder/amd64/5.10.100
 ```
 
-Or build locally yourself
+#### Option: Build locally yourself
 
 ```shell
-docker build --platform=i386 --tag "docker.registry.zxteam.net/pub/misc/gentoo-sources-builder/i686" --build-arg KERNEL_VERSION=5.10.100 --file "docker/i686/Dockerfile" .
+docker build --platform=i386 --tag "ghcr.io/zxteamorg/deprecated-gentoo-sources-builder/i686/5.10.100" --build-arg KERNEL_VERSION=5.10.100 --file "docker/i686/Dockerfile" .
 
-docker build --platform=amd64 --tag "docker.registry.zxteam.net/pub/misc/gentoo-sources-builder/amd64" --build-arg KERNEL_VERSION=5.10.100 --file "docker/amd64/Dockerfile" .
+docker build --platform=amd64 --tag "ghcr.io/zxteamorg/deprecated-gentoo-sources-builder/amd64/5.10.100" --build-arg KERNEL_VERSION=5.10.100 --file "docker/amd64/Dockerfile" .
 ```
-/support/docker-entrypoint.sh initramfs
-### Use builder image
+
+### Use the image
 
 ```shell
 # Select arch
@@ -77,13 +68,13 @@ docker run --rm --interactive --tty \
   --mount type=bind,source="${PWD}/.${SITE}",target=/data/build \
   --volume "${ARCH}-${SITE}-cache":/data/cache \
   --env SITE \
-  "ghcr.io/zxteamorg/deprecated-gentoo-sources-builder:amd64-202203030452-5.10.100" \
+  "ghcr.io/zxteamorg/deprecated-gentoo-sources-builder/${ARCH}/5.10.100" \
     menuconfig
 docker run --rm --interactive --tty \
   --mount type=bind,source="${PWD}/.${SITE}",target=/data/build \
   --volume "${ARCH}-${SITE}-cache":/data/cache \
   --env SITE \
-  "ghcr.io/zxteamorg/deprecated-gentoo-sources-builder:amd64-202203030452-5.10.100" \
+  "ghcr.io/zxteamorg/deprecated-gentoo-sources-builder/${ARCH}/5.10.100" \
     kernel
 
 
@@ -92,7 +83,7 @@ docker run --rm --interactive --tty \
   --mount type=bind,source="${PWD}/.${SITE}",target=/data/build \
   --volume "${ARCH}-${SITE}-cache":/data/cache \
   --env SITE \
-  "docker.registry.zxteam.net/pub/misc/gentoo-sources-builder/${ARCH}" \
+  "ghcr.io/zxteamorg/deprecated-gentoo-sources-builder/${ARCH}/5.10.100" \
     initramfs
 
 
@@ -111,6 +102,6 @@ docker run --rm --interactive --tty \
   --mount type=bind,source="${PWD}/.${SITE}",target=/data/build \
   --volume "${ARCH}-${SITE}-cache":/data/cache \
   --env SITE \
-  "docker.registry.zxteam.net/pub/misc/gentoo-sources-builder/${ARCH}" \
+  "ghcr.io/zxteamorg/deprecated-gentoo-sources-builder/${ARCH}/5.10.100" \
     initramfs
 ```

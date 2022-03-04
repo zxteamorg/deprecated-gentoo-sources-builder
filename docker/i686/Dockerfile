@@ -31,12 +31,12 @@ RUN \
 
 # We need udev to embed into initramfs
 RUN \
-	emerge --quiet --oneshot \
+	emerge --quiet \
 		sys-fs/udev
 
 # We need intel-microcode and linux-firmware to bundle microcode. See more https://wiki.gentoo.org/wiki/Microcode
 RUN \
-	emerge --quiet --oneshot \
+	emerge --quiet \
 		sys-firmware/intel-microcode \
 		sys-kernel/linux-firmware
 
@@ -45,7 +45,7 @@ RUN \
 # We need mdadm to embed into initramfs
 RUN \
 	USE="-pam static static-libs" \
-	emerge --quiet --oneshot \
+	emerge --quiet \
 		app-arch/cpio \
 		sys-apps/busybox \
 		sys-fs/mdadm
@@ -53,21 +53,27 @@ RUN \
 # We need LVM to embed into initramfs
 RUN \
 	USE="readline thin udev" \
-	emerge --quiet --oneshot \
+	emerge --quiet \
 		sys-fs/lvm2
 
 # We need cryptsetup to embed into initramfs
 RUN \
 	USE="openssl udev" \
-	emerge --quiet --oneshot \
+	emerge --quiet \
 		sys-fs/cryptsetup
 
 # We need dropbear to embed into initramfs
 RUN \
 	ACCEPT_KEYWORDS="~x86" \
 	USE="minimal -pam -shadow static static-libs -syslog" \
-	emerge --quiet --oneshot \
+	emerge --quiet \
 		dropbear
+
+# GPT disk tools
+RUN \
+	emerge --quiet \
+		sys-apps/gptfdisk \
+		sys-block/parted
 
 RUN eselect kernel set 1
 

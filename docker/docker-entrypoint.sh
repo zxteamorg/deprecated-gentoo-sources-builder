@@ -238,6 +238,12 @@ function build_initramfs() {
 		fi
 	done
 
+	for NSSLIB in $(ls -1 /lib/libnss_*); do
+		if ! (printf '%s\n' "${LIB_ITEMS[@]}" | grep -xq "${NSSLIB}"); then
+			LIB_ITEMS+=("${NSSLIB}")
+		fi
+	done
+
 	for LIB_ITEM in ${LIB_ITEMS[@]}; do
 		if [ -e "${LIB_ITEM}" ]; then
 			# # Right now pass all libs as files (without symlinks)

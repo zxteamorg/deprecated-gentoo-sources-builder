@@ -155,7 +155,6 @@ function build_initramfs() {
 	echo "file /etc/passwd /support/misc/passwd 644 0 0" >> "${CPIO_LIST}"
 	echo "file /init /data/cache/usr/src/initramfs/init 755 0 0" >> "${CPIO_LIST}"
 	echo "file /uncrypt /data/cache/usr/src/initramfs/uncrypt 755 0 0" >> "${CPIO_LIST}"
-	echo "file /bin/busybox /bin/busybox 755 0 0" >> "${CPIO_LIST}"
 	echo "dir /usr/share/udhcpc 755 0 0" >> "${CPIO_LIST}"
 	echo "file /usr/share/udhcpc/default.script /usr/share/udhcpc/default.script 755 0 0" >> "${CPIO_LIST}"
 	echo >> "${CPIO_LIST}"
@@ -164,8 +163,8 @@ function build_initramfs() {
 	echo "# Software" >> "${CPIO_LIST}"
 	SOFT_ITEMS=""
 
-	# LDD
-	SOFT_ITEMS="${SOFT_ITEMS} /usr/bin/ldd"
+	# Busybox
+	SOFT_ITEMS="${SOFT_ITEMS} /bin/busybox"
 
 	# Filesystem tools
 	SOFT_ITEMS="${SOFT_ITEMS} /sbin/e2fsck /sbin/fsck /sbin/fsck.ext4 /sbin/mke2fs /sbin/mkfs /sbin/mkfs.ext4 /sbin/resize2fs"
@@ -206,6 +205,15 @@ function build_initramfs() {
 	esac
 
 	declare -a LIB_ITEMS
+	case "${IMAGE_ARCH}" in
+		amd64)
+			LIB_ITEMS+=("/usr/lib/gcc/x86_64-pc-linux-gnu/11.2.0/libgcc_s.so.1")
+			LIB_ITEMS+=("/usr/lib/gcc/x86_64-pc-linux-gnu/11.2.0/32/libgcc_s.so.1")
+			;;
+		i686)
+			LIB_ITEMS+=("/usr/lib/gcc/i686-pc-linux-gnu/11.2.0/libgcc_s.so.1")
+			;;
+	esac
 	for SOFT_ITEM in ${SOFT_ITEMS}; do
 		if [ -e "${SOFT_ITEM}" ]; then
 			if [ ! -L "${SOFT_ITEM}" ]; then

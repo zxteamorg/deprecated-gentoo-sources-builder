@@ -41,13 +41,17 @@ RUN \
 		sys-kernel/linux-firmware
 
 # We need busybox to embed into initramfs
+RUN \
+	USE="-pam" \
+	emerge --quiet \
+		sys-apps/busybox
+
 # We need cpio to pack initramfs
 # We need mdadm to embed into initramfs
 RUN \
 	USE="-pam static static-libs" \
 	emerge --quiet \
 		app-arch/cpio \
-		sys-apps/busybox \
 		sys-fs/mdadm
 
 # We need LVM to embed into initramfs

@@ -205,15 +205,17 @@ function build_initramfs() {
 	esac
 
 	declare -a LIB_ITEMS
+
+	# libgcc_s.so.1 for cryptsetup
 	case "${IMAGE_ARCH}" in
 		amd64)
-			LIB_ITEMS+=("/usr/lib/gcc/x86_64-pc-linux-gnu/11.2.0/libgcc_s.so.1")
-			LIB_ITEMS+=("/usr/lib/gcc/x86_64-pc-linux-gnu/11.2.0/32/libgcc_s.so.1")
+			echo "file /lib64/libgcc_s.so.1 /usr/lib/gcc/x86_64-pc-linux-gnu/11.2.0/libgcc_s.so.1 755 0 0" >> "${CPIO_LIST}"
 			;;
 		i686)
-			LIB_ITEMS+=("/usr/lib/gcc/i686-pc-linux-gnu/11.2.0/libgcc_s.so.1")
+			echo "file /lib/libgcc_s.so.1 /usr/lib/gcc/i686-pc-linux-gnu/11.2.0/libgcc_s.so.1 755 0 0" >> "${CPIO_LIST}"
 			;;
 	esac
+
 	for SOFT_ITEM in ${SOFT_ITEMS}; do
 		if [ -e "${SOFT_ITEM}" ]; then
 			if [ ! -L "${SOFT_ITEM}" ]; then
@@ -311,7 +313,8 @@ function build_initramfs() {
 	cp "${CPIO_LIST}" "/data/build/boot/${INITRAMFS_FILE}.cpiolist"
 
 	echo "Generating initramfs file ${INITRAMFS_FILE}.cpio.gz..."
-	./usr/gen_initramfs.sh -o "/data/build/boot/${INITRAMFS_FILE}.cpio.gz" "${CPIO_LIST}"
+	./usr/gen_initramfs.sh -o "/data/build/boot/${INITRAMFS_FILE}.cpio" "${CPIO_LIST}"
+	gzip -9 -f -k "/data/build/boot/${INITRAMFS_FILE}.cpio"
 	ln -sf "${INITRAMFS_FILE}.cpio.gz" /data/build/boot/initramfs.cpio.gz
 
 	# # Debugging
@@ -320,9 +323,10 @@ function build_initramfs() {
 	# mkdir -p "/data/cache/boot.debug/${INITRAMFS_FILE}"
 	# cd "/data/cache/boot.debug/${INITRAMFS_FILE}"
 	# zcat "/data/build/boot/${INITRAMFS_FILE}.cpio.gz" | cpio --extract
-	# exec chroot . /bin/busybox sh -i
+	# mount --bind /dev ./dev
+	# chroot . /bin/busybox sh -i
 
-	#exec /bin/busybox sh
+	# exec /bin/busybox sh
 }
 
 if [ -z "$1" ]; then

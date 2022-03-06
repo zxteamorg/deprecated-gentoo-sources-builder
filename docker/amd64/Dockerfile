@@ -90,9 +90,6 @@ COPY misc /support/misc
 RUN echo "${KERNEL_VERSION}" > /support/KERNEL_VERSION
 RUN echo "amd64" > /support/IMAGE_ARCH
 
-RUN rm -rf /var/db
-RUN rm -rf /usr/share/man
-
 # === Sites ==============================================================
 COPY sites/amd64/                                   /support/sites/
 # ========================================================================
@@ -107,8 +104,9 @@ COPY docker/docker-entrypoint.sh /support/docker-entrypoint.sh
 RUN \
   rm -rf /run/*; \
   rm -rf /tmp/*; \
+  rm -rf /usr/share/man; \
   rm -rf /var/cache/*; \
-  rm -rf /var/db/repos/*; \
+  rm -rf /var/db/*; \
   rm -rf /var/log/*; \
   rm -rf /var/tmp/*
 

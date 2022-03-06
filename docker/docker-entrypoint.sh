@@ -166,6 +166,9 @@ function build_initramfs() {
 	# Busybox
 	SOFT_ITEMS="${SOFT_ITEMS} /bin/busybox"
 
+	# Strace
+	SOFT_ITEMS="${SOFT_ITEMS} /usr/bin/strace"
+
 	# Filesystem tools
 	SOFT_ITEMS="${SOFT_ITEMS} /sbin/e2fsck /sbin/fsck /sbin/fsck.ext4 /sbin/mke2fs /sbin/mkfs /sbin/mkfs.ext4 /sbin/resize2fs"
 

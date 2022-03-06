@@ -79,6 +79,11 @@ RUN \
 		sys-apps/gptfdisk \
 		sys-block/parted
 
+# strace
+RUN \
+	emerge --quiet \
+		dev-util/strace
+
 RUN eselect kernel set 1
 
 RUN cd /usr/src/linux && make -C usr/ gen_init_cpio && chmod +x usr/gen_init_cpio usr/gen_initramfs.sh

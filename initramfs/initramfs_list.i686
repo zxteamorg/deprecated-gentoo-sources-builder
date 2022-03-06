@@ -23,6 +23,9 @@ dir /var/log           755 0 0
 dir /usr               755 0 0
 dir /usr/bin           755 0 0
 dir /usr/lib           755 0 0
+dir /usr/lib/gcc                             755 0 0
+dir /usr/lib/gcc/i686-pc-linux-gnu           755 0 0
+dir /usr/lib/gcc/i686-pc-linux-gnu/11.2.0    755 0 0
 dir /usr/sbin          755 0 0
 dir /usr/share         755 0 0
 

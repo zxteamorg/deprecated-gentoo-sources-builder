@@ -68,10 +68,9 @@ RUN \
 
 # We need dropbear to embed into initramfs
 RUN \
-	ACCEPT_KEYWORDS="~x86" \
 	USE="minimal -pam -shadow static static-libs -syslog" \
 	emerge --quiet \
-		dropbear
+		net-misc/dropbear
 
 # GPT disk tools
 RUN \

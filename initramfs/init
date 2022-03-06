@@ -256,6 +256,7 @@ z_snap() {
 z_ssh() {
 	[ ! -f /root/dropbear.rsa ] && /usr/bin/dropbearkey -t rsa -f /root/dropbear.rsa
 	[ ! -f /root/dropbear.dss ] && /usr/bin/dropbearkey -t dss -f /root/dropbear.dss
+	# /usr/bin/dropbearkey -t rsa -f /root/dropbear.rsa; /usr/bin/dropbearkey -t dss -f /root/dropbear.dss; strace /usr/sbin/dropbear -p 10022 -r /root/dropbear.rsa -d /root/dropbear.dss -F
 
 	/usr/sbin/dropbear -r /root/dropbear.rsa -d /root/dropbear.dss || fatal "Failure start Dropbear SSH Server"
 	echo "pkill -f /usr/sbin/dropbear" >> /tmp/cleanup.sh

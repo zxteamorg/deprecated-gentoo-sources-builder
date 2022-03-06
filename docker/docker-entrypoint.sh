@@ -327,12 +327,14 @@ function build_initramfs() {
 	gzip -9 -f -k "/data/build/boot/${INITRAMFS_FILE}.cpio"
 	ln -sf "${INITRAMFS_FILE}.cpio.gz" /data/build/boot/initramfs.cpio.gz
 
-	# # Debugging
-	# echo "Unpack final image into ./boot.debug/${INITRAMFS_FILE}"
-	# [ -d "/data/cache/boot.debug/${INITRAMFS_FILE}" ] && rm -rf "/data/cache/boot.debug/${INITRAMFS_FILE}"
-	# mkdir -p "/data/cache/boot.debug/${INITRAMFS_FILE}"
-	# cd "/data/cache/boot.debug/${INITRAMFS_FILE}"
-	# zcat "/data/build/boot/${INITRAMFS_FILE}.cpio.gz" | cpio --extract
+	# Double check initramfs integrity by unpack
+	echo "Unpack final image into ./boot.debug/${INITRAMFS_FILE}"
+	[ -d "/data/cache/boot.debug/${INITRAMFS_FILE}" ] && rm -rf "/data/cache/boot.debug/${INITRAMFS_FILE}"
+	mkdir -p "/data/cache/boot.debug/${INITRAMFS_FILE}"
+	cd "/data/cache/boot.debug/${INITRAMFS_FILE}"
+	zcat "/data/build/boot/${INITRAMFS_FILE}.cpio.gz" | cpio --extract
+
+	# Debugging
 	# mount --bind /dev ./dev
 	# chroot . /bin/busybox sh -i
 

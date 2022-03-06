@@ -106,17 +106,17 @@ COPY initramfs/uncrypt                              /support/initramfs/uncrypt
 
 COPY docker/docker-entrypoint.sh /support/docker-entrypoint.sh
 
-# RUN \
-#   rm -rf /run/*; \
-#   rm -rf /tmp/*; \
-#   rm -rf /usr/share/man; \
-#   rm -rf /var/cache/*; \
-#   rm -rf /var/db/*; \
-#   rm -rf /var/log/*; \
-#   rm -rf /var/tmp/*
+RUN \
+  rm -rf /run/*; \
+  rm -rf /tmp/*; \
+  rm -rf /usr/share/man; \
+  rm -rf /var/cache/*; \
+  rm -rf /var/db/*; \
+  rm -rf /var/log/*; \
+  rm -rf /var/tmp/*
 
-# FROM scratch
-# COPY --from=stage / /
+FROM scratch
+COPY --from=stage / /
 VOLUME [ "/data/build", "/data/cache" ]
 ENV SITE=
 ENTRYPOINT [ "/support/docker-entrypoint.sh" ]

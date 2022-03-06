@@ -151,6 +151,7 @@ function build_initramfs() {
 	echo >> "${CPIO_LIST}"
 
 	echo "file /etc/group /support/misc/group 644 0 0" >> "${CPIO_LIST}"
+	echo "file /etc/ld.so.conf /etc/ld.so.conf 644 0 0" >> "${CPIO_LIST}"
 	echo "file /etc/nsswitch.conf /support/misc/nsswitch.conf 644 0 0" >> "${CPIO_LIST}"
 	echo "file /etc/passwd /support/misc/passwd 644 0 0" >> "${CPIO_LIST}"
 	echo "file /init /data/cache/usr/src/initramfs/init 755 0 0" >> "${CPIO_LIST}"
@@ -246,6 +247,12 @@ function build_initramfs() {
 	for NSSLIB in $(ls -1 /lib/libnss_*); do
 		if ! (printf '%s\n' "${LIB_ITEMS[@]}" | grep -xq "${NSSLIB}"); then
 			LIB_ITEMS+=("${NSSLIB}")
+		fi
+	done
+
+	for RESOLVLIB in $(ls -1 /lib/libresolv*); do
+		if ! (printf '%s\n' "${LIB_ITEMS[@]}" | grep -xq "${RESOLVLIB}"); then
+			LIB_ITEMS+=("${RESOLVLIB}")
 		fi
 	done
 

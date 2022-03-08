@@ -17,6 +17,8 @@ ARG KERNEL_VERSION=
 # Copy the portage tree into the current stage
 COPY --from=portage /var/db /var/db
 
+RUN emerge --sync
+
 RUN echo 'ACCEPT_LICENSE="*"' >> /etc/portage/make.conf
 RUN echo 'FEATURES="-ipc-sandbox -network-sandbox -pid-sandbox -sandbox -usersandbox"' >> /etc/portage/make.conf
 RUN echo 'EMERGE_DEFAULT_OPTS="--jobs 3"' >> /etc/portage/make.conf

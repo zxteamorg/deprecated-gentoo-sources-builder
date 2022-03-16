@@ -170,6 +170,9 @@ function build_initramfs() {
 	# Strace
 	SOFT_ITEMS="${SOFT_ITEMS} /usr/bin/strace"
 
+	# Curl requires for stratum download
+	SOFT_ITEMS="${SOFT_ITEMS} /usr/bin/curl"
+
 	# Filesystem tools
 	SOFT_ITEMS="${SOFT_ITEMS} /sbin/e2fsck /sbin/fsck /sbin/fsck.ext4 /sbin/mke2fs /sbin/mkfs /sbin/mkfs.ext4 /sbin/resize2fs"
 

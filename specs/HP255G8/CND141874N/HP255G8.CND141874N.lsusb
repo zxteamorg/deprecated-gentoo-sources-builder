@@ -1,0 +1,16 @@
+/:  Bus 02.Port 1: Dev 1, Class=root_hub, Driver=xhci_hcd/4p, 10000M
+    ID 1d6b:0003  
+    |__ Port 4: Dev 2, If 0, Class=, Driver=usb-storage, 5000M
+        ID 0781:5591  
+/:  Bus 01.Port 1: Dev 1, Class=root_hub, Driver=xhci_hcd/6p, 480M
+    ID 1d6b:0002  
+    |__ Port 6: Dev 2, If 0, Class=, Driver=hub/4p, 480M
+        ID 05e3:0608  
+        |__ Port 1: Dev 3, If 1, Class=, Driver=, 480M
+            ID 05c8:0238  
+        |__ Port 1: Dev 3, If 0, Class=, Driver=, 480M
+            ID 05c8:0238  
+        |__ Port 3: Dev 4, If 0, Class=, Driver=, 12M
+            ID 0bda:b00a  
+        |__ Port 3: Dev 4, If 1, Class=, Driver=, 12M
+            ID 0bda:b00a  

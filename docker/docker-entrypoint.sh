@@ -214,11 +214,13 @@ function build_initramfs() {
 	declare -a LIB_ITEMS
 
 	# libgcc_s.so.1 for cryptsetup
-	LIBGCC_FILE=$(find /usr/lib/gcc -name libgcc_s.so.1 -maxdepth 3 | head -n 1)
-	if [ -z "${LIBGCC_FILE}" ];
+	LIBGCC_FILE=$(find /usr/lib/gcc -maxdepth 3 -name libgcc_s.so.1 | head -n 1)
+	if [ -z "${LIBGCC_FILE}" ]; then
 		echo "Unable to resolve libgcc_s.so.1" >&2
 		exit 71
 	fi
+	LIBGCC_DIR=$(dirname "${LIBGCC_FILE}")
+	echo "dir ${LIBGCC_DIR}    755 0 0" >> "${CPIO_LIST}"
 	case "${IMAGE_ARCH}" in
 		amd64)
 			echo "file /lib64/libgcc_s.so.1 ${LIBGCC_FILE} 755 0 0" >> "${CPIO_LIST}"

@@ -1,23 +1,12 @@
 # https://hub.docker.com/r/gentoo/stage3
-# gentoo/stage3:i686-openrc-20220306 -> DIGEST:sha256:2514c0f9567b9f9b0330d5e7affa562073a1249d4423c222e0be61cba7789b7c
-ARG GENTOO_STAGE3_IMAGE_DIGEST=sha256:2514c0f9567b9f9b0330d5e7affa562073a1249d4423c222e0be61cba7789b7c
-
-# https://hub.docker.com/r/gentoo/portage
-# gentoo/portage:20220306 -> DIGEST:sha256:99528388a6e5cfe25f79bee2ec908650bc5a4910d983048b0d47cc5a50850a89
-ARG GENTOO_PORTAGE_IMAGE_DIGEST=sha256:99528388a6e5cfe25f79bee2ec908650bc5a4910d983048b0d47cc5a50850a89
-
-# Use the empty image with the portage tree as the first stage
-FROM gentoo/portage@${GENTOO_PORTAGE_IMAGE_DIGEST} AS portage
-
+# gentoo/stage3:i686-openrc-20220320 -> DIGEST:sha256:8d116a039ee1a8a43d6b32bec40ac2ed6dd2285e06a8a3cb75c850f41909b5bf
+ARG GENTOO_STAGE3_IMAGE_DIGEST=sha256:8d116a039ee1a8a43d6b32bec40ac2ed6dd2285e06a8a3cb75c850f41909b5bf
 
 # Target container with Gentoo Linux + necessary tools to build kernel and initramfs
 FROM --platform=386 gentoo/stage3@${GENTOO_STAGE3_IMAGE_DIGEST} as stage
 ARG KERNEL_VERSION=
 
-# Copy the portage tree into the current stage
-COPY --from=portage /var/db /var/db
-
-RUN emerge --sync
+RUN emerge-webrsync
 
 RUN echo 'ACCEPT_LICENSE="*"' >> /etc/portage/make.conf
 RUN echo 'FEATURES="-ipc-sandbox -network-sandbox -pid-sandbox -sandbox -usersandbox"' >> /etc/portage/make.conf

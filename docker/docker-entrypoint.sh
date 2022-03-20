@@ -252,6 +252,11 @@ function build_initramfs() {
 			LIB_ITEMS+=("${NSSLIB}")
 		fi
 	done
+	for NSSLIB in $(ls -1 /lib64/libnss_*); do
+		if ! (printf '%s\n' "${LIB_ITEMS[@]}" | grep -xq "${NSSLIB}"); then
+			LIB_ITEMS+=("${NSSLIB}")
+		fi
+	done
 
 	for RESOLVLIB in $(ls -1 /lib/libresolv*); do
 		if ! (printf '%s\n' "${LIB_ITEMS[@]}" | grep -xq "${RESOLVLIB}"); then

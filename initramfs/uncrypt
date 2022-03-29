@@ -80,6 +80,7 @@ uncrypt() {
 						local SUCCESS_LUKSOPEN=0
 						if echo $PASSKEY | /sbin/cryptsetup ${CRYPTSETUP_OPTS} luksOpen "$DEV" "$UNCRYPTED_NAME" >/dev/null; then
 							SUCCESS_LUKSOPEN=1
+							sed -i "5 i /sbin/cryptsetup luksClose \"/dev/mapper/$UNCRYPTED_NAME\"" /tmp/rollback.sh
 							break
 						fi
 					done

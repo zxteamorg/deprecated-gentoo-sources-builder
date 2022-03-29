@@ -147,8 +147,9 @@ z_md() {
 		MEMBER_DEVS=$(echo "${MDTARGET}" | cut -d, -f2- | cut -d: -f2- | sed -r 's/,/ /g' | sed 's/[^ ]* */\/dev\/&/g')
 
 		info " Assembling software RAID ${MD_DEV} on devices ${MEMBER_DEVS}..."
-		/sbin/mdadm --assemble --run ${MD_DEV} ${MEMBER_DEVS} || fatal "z_md(): Failure MD assemble software RAID ${MD_DEV} on devices ${MEMBER_DEVS}"
+		/sbin/mdadm --assemble --run "${MD_DEV}" ${MEMBER_DEVS} || fatal "z_md(): Failure MD assemble software RAID ${MD_DEV} on devices ${MEMBER_DEVS}"
 		#/sbin/mdadm --assemble --update=name --run ${MD_DEV} ${MEMBER_DEVS} || fatal "z_md(): Cannot MD assemble: ${MD_DEV} ${MEMBER_DEVS}"
+		sed -i "5 i /sbin/mdadm --stop \"${MD_DEV}\"" /tmp/rollback.sh
 	done
 }
 
@@ -162,6 +163,12 @@ z_pwd() {
 	echo "root:$1" | /bin/busybox chpasswd
 }
 
+z_reboot() {
+	/tmp/rollback.sh || fatal "Rollback failed."
+
+	reboot -f
+}
+
 z_root() {
 	[ -n "$1" ] || fatal "z_root(): Wrong argument error. Example: z_root=\"vg0/system,ext3[,ro][,discard]\" (no /dev prefix)"
 
@@ -172,16 +179,17 @@ z_root() {
 	FS=$(echo "$1" | cut -d, -f2)
 	OPTS=$(echo "$1" | cut -d, -f3-)
 
-	[ -z "$DEV" ] && fatal "z_root(): Argument error. Bad device."
-	[ -z "$FS" ] && fatal "z_root(): Argument error. Bad filesystem type."
+	[ -z "${DEV}" ] && fatal "z_root(): Argument error. Bad device."
+	[ -z "${FS}" ] && fatal "z_root(): Argument error. Bad filesystem type."
 
-	info "Mount filesystem /dev/$DEV ($FS) to /newroot"
-	[ -b "/dev/$DEV" ] || fatal "z_root(): Device /dev/$DEV does not exist."
+	info "Mount filesystem /dev/${DEV} (${FS}) to /newroot"
+	[ -b "/dev/${DEV}" ] || fatal "z_root(): Device /dev/${DEV} does not exist."
 	if [ ! -d /newroot ]; then
 		mkdir /newroot || fatal "z_root(): Cannot create mountpoint /newroot"
 	fi
 
-	mount -o "$OPTS" -n -t "$FS" "/dev/$DEV" /newroot || fatal "z_root(): Failure mount /dev/$DEV to /newroot"
+	mount -o "${OPTS}" -n -t "${FS}" "/dev/${DEV}" /newroot || fatal "z_root(): Failure mount /dev/${DEV} to /newroot"
+	sed -i "5 i umount /newroot" /tmp/rollback.sh
 }
 
 z_shell() {
@@ -494,8 +502,9 @@ z_vg() {
 	FRIENDLY_ARGS=$(echo "$1" | sed -r 's/;/ /g')
 
 	for VG in ${FRIENDLY_ARGS}; do
- 		info " Activating Volume Group: $VG"
-		/sbin/vgchange --activate y "$VG" || fatal "z_vg(): Failure activate volume $VG"
+ 		info " Activating Volume Group: ${VG}"
+		/sbin/vgchange --activate y "${VG}" || fatal "z_vg(): Failure activate volume ${VG}"
+		sed -i "5 i /sbin/vgchange --activate n \"${VG}\"" /tmp/rollback.sh
 	done
 }
 
@@ -520,8 +529,15 @@ echo "#!/bin/busybox sh" > /tmp/cleanup.sh
 echo >> /tmp/cleanup.sh
 echo "set -e" >> /tmp/cleanup.sh
 echo >> /tmp/cleanup.sh
-chmod +x /tmp/cleanup.sh || fatal "Failure make executeble cleanup script tmp/cleanup.sh"
+chmod +x /tmp/cleanup.sh || fatal "Failure make executeble cleanup script /tmp/cleanup.sh"
 
+# Prepare rollback script
+echo "#!/bin/busybox sh" > /tmp/rollback.sh
+echo >> /tmp/rollback.sh
+echo "set -e" >> /tmp/rollback.sh
+echo >> /tmp/rollback.sh
+echo >> /tmp/rollback.sh
+chmod +x /tmp/rollback.sh || fatal "Failure make executeble cleanup script /tmp/rollback.sh"
 
 # Kernel command-line
 KCMD=$(cat "/proc/cmdline")

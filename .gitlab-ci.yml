@@ -187,7 +187,7 @@
 #     - /support/docker-entrypoint.sh initramfs
 #     - !reference [.framework, publish_boot_artifacts]
 
-# hp64xx:
+# hppro6470b_h5e56et_abu:
 #   stage: targets
 #   image:
 #     name: "${CI_REGISTRY_IMAGE}/amd64:${CI_COMMIT_REF_SLUG}.${CI_COMMIT_SHORT_SHA}"
@@ -198,7 +198,7 @@
 #     - master
 #     - tags
 #   script:
-#     - export SITE=hp64xx
+#     - export SITE=hppro6470b_h5e56et_abu
 #     - /support/docker-entrypoint.sh initconfig
 #     - /support/docker-entrypoint.sh kernel
 #     - /support/docker-entrypoint.sh initramfs

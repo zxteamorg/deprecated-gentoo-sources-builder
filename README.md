@@ -54,8 +54,8 @@ export ARCH=amd64
 #export SITE=axx99v102a
 #export SITE=dellcs24sc
 export SITE=digitaloceanvm
-#export SITE=hp255g8
-#export SITE=hp64xx
+#export SITE=hp255g8_27k51ea_a2q
+#export SITE=hppro6470b_h5e56et_abu
 #export SITE=virtualboxvm
 
 # Create cache volume

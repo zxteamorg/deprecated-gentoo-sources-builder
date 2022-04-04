@@ -289,7 +289,8 @@ __stratum__resolve_image_hash() {
 		return 0
 	fi
 
-	local IMAGE_MANIFEST_URL="http://dl.zxteam.net/stratum/images/${TARGET_IMAGE_ID}/MANIFEST"
+	local URL_ESCAPED_TARGET_IMAGE_ID=$(echo "${TARGET_IMAGE_ID}" | sed "s/#/%23/g")
+	local IMAGE_MANIFEST_URL="http://dl.zxteam.net/stratum/images/${URL_ESCAPED_TARGET_IMAGE_ID}/MANIFEST"
 	local REMOTE_MANIFEST_DATA=
 	REMOTE_MANIFEST_DATA=$(curl --fail --silent "${IMAGE_MANIFEST_URL}")
 	if [ $? -ne 0 ]; then
@@ -379,6 +380,73 @@ z_stratum_wipe() {
 	mkfs.${STRATUM_STATE_FS}  -L stratum-state  -F -N 524288 "${STRATUM_STATE_DEV}"  || fatal "z_stratum_wipe(): Failure mkfs on \"${STRATUM_STATE_DEV}\""
 }
 
+z_stratum_pull() {
+	[ -n "$1" ] || fatal "z_stratum_pull(): Wrong argument error. Example: z_stratum_pull=\"vg0/stratum-images,ext4,osfordev-H5E56ET#ABU\""
+
+	local STRATUM_IMAGES_DEV=
+	local STRATUM_IMAGES_FS=
+	local STRATUM_ROOT_IMAGE=
+
+	STRATUM_IMAGES_DEV=/dev/$(echo "$1" | cut -d, -f1)
+	STRATUM_IMAGES_FS=$(echo "$1" | cut -d, -f2)
+	STRATUM_ROOT_IMAGE=$(echo "$1" | cut -d, -f3)
+
+	mkdir /run/stratum || fatal "z_stratum_pull(): Failure create directory /run/stratum"
+	mkdir /run/stratum/images || fatal "z_stratum_pull(): Failure create directory /run/stratum/images"
+	mkdir /run/stratum/state || fatal "z_stratum_pull(): Failure create directory /run/stratum/state"
+
+	mount -t "${STRATUM_IMAGES_FS}" -o rw "${STRATUM_IMAGES_DEV}" /run/stratum/images || fatal "z_stratum_pull(): Failure mount \"${STRATUM_IMAGES_DEV}\" to /run/stratum/images"
+	sed -i "5 i umount /run/stratum/images" /tmp/rollback.sh
+	info "z_stratum_pull(): /run/stratum/images mounted from ${STRATUM_IMAGES_DEV}"
+
+	local LAYER_NUMBER=0
+	local IMAGE_HASH=
+	IMAGE_HASH=$(__stratum__resolve_image_hash "${STRATUM_ROOT_IMAGE}")
+	local ROOT_IMAGE_HASH_RESOLUTION_CODE=$?
+	if [ ${ROOT_IMAGE_HASH_RESOLUTION_CODE} -ne 0 ]; then
+		fatal "z_stratum_pull(): Cannot read remote MANIFEST data. Exit with code: ${ROOT_IMAGE_HASH_RESOLUTION_CODE}."
+	fi
+	info "z_stratum_pull(): Root image hash: ${IMAGE_HASH}"
+
+	while [ -n "${IMAGE_HASH}" ]; do
+		local IMAGE_DIR="/run/stratum/images/${IMAGE_HASH}"
+		local IMAGE_MANIFEST_FILE="${IMAGE_DIR}/MANIFEST"
+		local IMAGE_DATA_FILE="${IMAGE_DIR}/DATA"
+
+		if [ -d "${IMAGE_DIR}" ]; then
+			if [ ! -f "${IMAGE_MANIFEST_FILE}" -o ! -f "${IMAGE_DATA_FILE}" ]; then
+				warn "z_stratum_pull(): Removing broken image dir \"${IMAGE_DIR}\" ..."
+				rm -rf "${IMAGE_DIR}" || fatal "z_stratum_pull(): Failure remove broken image dir \"${IMAGE_DIR}\""
+			fi
+		fi
+
+		if [ ! -d "${IMAGE_DIR}" ]; then
+			info "z_stratum_pull(): Downloading image ${IMAGE_HASH} ..."
+			__stratum__download_image "${IMAGE_HASH}" || fatal "z_stratum_pull(): Cannot download image \"${IMAGE_HASH}\""
+			if [ ${LAYER_NUMBER} -eq 0 -a "${IMAGE_HASH}" != "${STRATUM_ROOT_IMAGE}" ]; then
+				ln -s "${IMAGE_HASH}" "/run/stratum/images/${STRATUM_ROOT_IMAGE}" || fatal "z_stratum_pull(): Cannot link \"/run/stratum/images/${STRATUM_ROOT_IMAGE}\" to \"${IMAGE_HASH}\""
+			fi
+		else
+			info "z_stratum_pull(): ${IMAGE_HASH} already exist"
+		fi
+
+		local LAYER_NAME="layer${LAYER_NUMBER}"
+		local LAYER_DIR="${STATE_DIR}/${LAYER_NAME}"
+
+		if [ ! -d "${LAYER_DIR}" ]; then
+			mkdir "${LAYER_DIR}" || fatal "z_stratum_pull(): Failure create layer dir ${STATE_DIR}"
+			info "z_stratum_pull(): ${LAYER_DIR} layer directory was created"
+		fi
+
+		mount -t squashfs -o ro,loop "${IMAGE_DATA_FILE}" "${LAYER_DIR}" || fatal "z_stratum_pull(): Failure mount layer \"${IMAGE_DATA_FILE}\" to \"${LAYER_DIR}\""
+		sed -i "5 i umount \"${LAYER_DIR}\"" /tmp/rollback.sh
+		info "z_stratum_pull(): ${IMAGE_DATA_FILE} layer image was mounted to ${LAYER_DIR}"
+
+		IMAGE_HASH=$(cat "${IMAGE_MANIFEST_FILE}" | grep -e "^BASE: " | rev | cut -d' ' -f1 | rev)
+		let "LAYER_NUMBER=$LAYER_NUMBER+1"
+	done
+}
+
 z_stratum_root() {
 	[ -n "$1" ] || fatal "z_stratum_root(): Wrong argument error. Example: z_stratum_root=\"vg0/stratum-images,ext4,vg0/stratum-state,ext4,d6779c7557a8f32fc5f4d636f74925241d9cc37a18d2f27683c3e87e983611bf\""
 
@@ -437,6 +505,9 @@ z_stratum_root() {
 		if [ ! -d "${IMAGE_DIR}" ]; then
 			info "z_stratum_root(): Downloading image ${IMAGE_HASH} ..."
 			__stratum__download_image "${IMAGE_HASH}"
+			if [ ${LAYER_NUMBER} -eq 0 -a "${IMAGE_HASH}" != "${STRATUM_ROOT_IMAGE}" ]; then
+				ln -s "${IMAGE_HASH}" "/run/stratum/images/${STRATUM_ROOT_IMAGE}" || fatal "z_stratum_root(): Cannot link \"/run/stratum/images/${STRATUM_ROOT_IMAGE}\" to \"${IMAGE_HASH}\""
+			fi
 		else
 			info "z_stratum_root(): ${IMAGE_HASH} already exist"
 		fi

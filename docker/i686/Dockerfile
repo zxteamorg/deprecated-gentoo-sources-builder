@@ -28,6 +28,7 @@ RUN \
 # We need intel-microcode and linux-firmware to bundle microcode. See more https://wiki.gentoo.org/wiki/Microcode
 RUN \
 	emerge --quiet \
+		net-wireless/wireless-regdb \
 		sys-firmware/intel-microcode \
 		sys-kernel/linux-firmware
 

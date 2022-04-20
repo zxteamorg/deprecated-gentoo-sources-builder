@@ -425,6 +425,7 @@ z_stratum_pull() {
 			__stratum__download_image "${IMAGE_HASH}" || fatal "z_stratum_pull(): Cannot download image \"${IMAGE_HASH}\""
 			if [ ${LAYER_NUMBER} -eq 0 -a "${IMAGE_HASH}" != "${STRATUM_ROOT_IMAGE}" ]; then
 				ln -s "${IMAGE_HASH}" "/run/stratum/images/${STRATUM_ROOT_IMAGE}" || fatal "z_stratum_pull(): Cannot link \"/run/stratum/images/${STRATUM_ROOT_IMAGE}\" to \"${IMAGE_HASH}\""
+				ln -s "${IMAGE_HASH}" "/run/stratum/images/system" || fatal "z_stratum_pull(): Cannot link \"/run/stratum/images/system\" to \"${IMAGE_HASH}\""
 			fi
 		else
 			info "z_stratum_pull(): ${IMAGE_HASH} already exist"
@@ -507,6 +508,7 @@ z_stratum_root() {
 			__stratum__download_image "${IMAGE_HASH}"
 			if [ ${LAYER_NUMBER} -eq 0 -a "${IMAGE_HASH}" != "${STRATUM_ROOT_IMAGE}" ]; then
 				ln -s "${IMAGE_HASH}" "/run/stratum/images/${STRATUM_ROOT_IMAGE}" || fatal "z_stratum_root(): Cannot link \"/run/stratum/images/${STRATUM_ROOT_IMAGE}\" to \"${IMAGE_HASH}\""
+				ln -s "${IMAGE_HASH}" "/run/stratum/images/system" || fatal "z_stratum_pull(): Cannot link \"/run/stratum/images/system\" to \"${IMAGE_HASH}\""
 			fi
 		else
 			info "z_stratum_root(): ${IMAGE_HASH} already exist"

@@ -380,6 +380,30 @@ z_stratum_wipe() {
 	mkfs.${STRATUM_STATE_FS}  -L stratum-state  -F -N 524288 "${STRATUM_STATE_DEV}"  || fatal "z_stratum_wipe(): Failure mkfs on \"${STRATUM_STATE_DEV}\""
 }
 
+z_stratum_wipe_state() {
+	[ -n "$1" ] || fatal "z_stratum_wipe_state(): Wrong argument error. Example: z_stratum_wipe_state=\"vg0/stratum-state,ext4\""
+
+	local STRATUM_STATE_DEV=
+	local STRATUM_STATE_FS=
+
+	STRATUM_STATE_DEV=/dev/$(echo "$1" | cut -d, -f1)
+	STRATUM_STATE_FS=$(echo "$1" | cut -d, -f2)
+
+	mkfs.${STRATUM_STATE_FS}  -L stratum-state  -F -N 524288 "${STRATUM_STATE_DEV}"  || fatal "z_stratum_wipe_state(): Failure mkfs on \"${STRATUM_STATE_DEV}\""
+}
+
+z_stratum_wipe_images() {
+	[ -n "$1" ] || fatal "z_stratum_wipe_images(): Wrong argument error. Example: z_stratum_wipe_images=\"vg0/stratum-images,ext4\""
+
+	local STRATUM_IMAGES_DEV=
+	local STRATUM_IMAGES_FS=
+
+	STRATUM_IMAGES_DEV=/dev/$(echo "$1" | cut -d, -f1)
+	STRATUM_IMAGES_FS=$(echo "$1" | cut -d, -f2)
+
+	mkfs.${STRATUM_IMAGES_FS} -L stratum-images -F -N 256    "${STRATUM_IMAGES_DEV}" || fatal "z_stratum_wipe_images(): Failure mkfs on \"${STRATUM_IMAGES_DEV}\""
+}
+
 z_stratum_pull() {
 	[ -n "$1" ] || fatal "z_stratum_pull(): Wrong argument error. Example: z_stratum_pull=\"vg0/stratum-images,ext4,osfordev-H5E56ET#ABU\""
 

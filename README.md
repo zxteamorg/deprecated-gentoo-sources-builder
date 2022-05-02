@@ -56,6 +56,7 @@ export ARCH=amd64
 export SITE=digitaloceanvm
 #export SITE=hp255g8_27k51ea_a2q
 #export SITE=hppro6470b_c3c58es_akd
+#export SITE=hppro6470b_d4h65ec_akd
 #export SITE=hppro6470b_h5e56et_abu
 #export SITE=virtualboxvm
 

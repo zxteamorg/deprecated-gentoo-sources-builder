@@ -53,6 +53,7 @@ export ARCH=amd64
 #export SITE=asusx402ca
 #export SITE=axx99v102a
 #export SITE=dellcs24sc
+#export SITE=zxtower04
 export SITE=digitaloceanvm
 #export SITE=hp255g8_27k51ea_a2q
 #export SITE=hppro6470b_c3c58es_akd

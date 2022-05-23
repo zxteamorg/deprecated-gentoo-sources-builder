@@ -30,15 +30,15 @@ where `X.Y.Z` is kernel version.
 
 For example:
 ```shell
-docker pull ghcr.io/zxteamorg/deprecated-gentoo-sources-builder/amd64/5.15.32-r1
+docker pull ghcr.io/zxteamorg/deprecated-gentoo-sources-builder/amd64/5.15.41
 ```
 
 #### Option: Build locally yourself
 
 ```shell
-docker build --platform=i386 --tag "ghcr.io/zxteamorg/deprecated-gentoo-sources-builder/i686/5.15.32-r1" --build-arg KERNEL_VERSION=5.15.32-r1 --file "docker/i686/Dockerfile" .
+docker build --platform=i386 --tag "ghcr.io/zxteamorg/deprecated-gentoo-sources-builder/i686/5.15.41" --build-arg KERNEL_VERSION=5.15.41 --file "docker/i686/Dockerfile" .
 
-docker build --platform=amd64 --tag "ghcr.io/zxteamorg/deprecated-gentoo-sources-builder/amd64/5.15.32-r1" --build-arg KERNEL_VERSION=5.15.32-r1 --file "docker/amd64/Dockerfile" .
+docker build --platform=amd64 --tag "ghcr.io/zxteamorg/deprecated-gentoo-sources-builder/amd64/5.15.41" --build-arg KERNEL_VERSION=5.15.41 --file "docker/amd64/Dockerfile" .
 ```
 
 ### Use the image
@@ -72,13 +72,13 @@ docker run --rm --interactive --tty \
   --mount type=bind,source="${PWD}/.${SITE}",target=/data/build \
   --volume "${ARCH}-${SITE}-cache":/data/cache \
   --env SITE \
-  "ghcr.io/zxteamorg/deprecated-gentoo-sources-builder/${ARCH}/5.15.32-r1" \
+  "ghcr.io/zxteamorg/deprecated-gentoo-sources-builder/${ARCH}/5.15.41" \
     menuconfig
 docker run --rm --interactive --tty \
   --mount type=bind,source="${PWD}/.${SITE}",target=/data/build \
   --volume "${ARCH}-${SITE}-cache":/data/cache \
   --env SITE \
-  "ghcr.io/zxteamorg/deprecated-gentoo-sources-builder/${ARCH}/5.15.32-r1" \
+  "ghcr.io/zxteamorg/deprecated-gentoo-sources-builder/${ARCH}/5.15.41" \
     kernel
 
 
@@ -87,7 +87,7 @@ docker run --rm --interactive --tty \
   --mount type=bind,source="${PWD}/.${SITE}",target=/data/build \
   --volume "${ARCH}-${SITE}-cache":/data/cache \
   --env SITE \
-  "ghcr.io/zxteamorg/deprecated-gentoo-sources-builder/${ARCH}/5.15.32-r1" \
+  "ghcr.io/zxteamorg/deprecated-gentoo-sources-builder/${ARCH}/5.15.41" \
     initramfs
 
 
@@ -106,6 +106,6 @@ docker run --rm --interactive --tty \
   --mount type=bind,source="${PWD}/.${SITE}",target=/data/build \
   --volume "${ARCH}-${SITE}-cache":/data/cache \
   --env SITE \
-  "ghcr.io/zxteamorg/deprecated-gentoo-sources-builder/${ARCH}/5.15.32-r1" \
+  "ghcr.io/zxteamorg/deprecated-gentoo-sources-builder/${ARCH}/5.15.41" \
     initramfs
 ```

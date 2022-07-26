@@ -35,7 +35,7 @@ jobs:
 
       - id: generate-kernels
         run: |
-          echo '::set-output name=kernels::["5.10.117", "5.15.41"]'
+          echo '::set-output name=kernels::["5.10.128", "5.15.52"]'
 
       - id: generate-build_date_yyyymmddhhmm
         run: |

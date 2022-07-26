@@ -30,13 +30,13 @@ where `X.Y.Z` is kernel version.
 
 For example:
 ```shell
-docker pull ghcr.io/zxteamorg/deprecated-gentoo-sources-builder/amd64/5.15.41
+docker pull ghcr.io/zxteamorg/deprecated-gentoo-sources-builder/amd64/5.15.52
 ```
 
 #### Option: Build locally yourself
 
 ```shell
-export KERNEL_VERSION=5.15.41
+export KERNEL_VERSION=5.15.52
 
 docker build --platform=i386 --tag "ghcr.io/zxteamorg/deprecated-gentoo-sources-builder/i686/${KERNEL_VERSION}" --build-arg KERNEL_VERSION --file "docker/i686/Dockerfile" .
 
@@ -58,6 +58,7 @@ export ARCH=amd64
 #export SITE=zxtower04
 export SITE=digitaloceanvm
 #export SITE=hp255g8_27k51ea_a2q
+#export SITE=hppro6470b_b2g18ec_aba
 #export SITE=hppro6470b_c3c58es_akd
 #export SITE=hppro6470b_d4h65ec_akd
 #export SITE=hppro6470b_h5e56et_abu
@@ -108,6 +109,6 @@ docker run --rm --interactive --tty \
   --mount type=bind,source="${PWD}/.${SITE}",target=/data/build \
   --volume "${ARCH}-${SITE}-cache":/data/cache \
   --env SITE \
-  "ghcr.io/zxteamorg/deprecated-gentoo-sources-builder/${ARCH}/5.15.41" \
+  "ghcr.io/zxteamorg/deprecated-gentoo-sources-builder/${ARCH}/5.15.52" \
     initramfs
 ```

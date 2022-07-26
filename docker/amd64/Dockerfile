@@ -1,6 +1,6 @@
 # https://hub.docker.com/r/gentoo/stage3
-# gentoo/stage3:amd64-openrc-20220606
-ARG GENTOO_STAGE3_IMAGE_DIGEST=sha256:8e04887175ac425e0aafc8d08733e9b5f96922b5b9ac1b496b553670b38918a3
+# gentoo/stage3:amd64-openrc-20220725
+ARG GENTOO_STAGE3_IMAGE_DIGEST=sha256:db9bd3a86d088d51c35ea3c3e3ed98d7d829fc1a881fe3b7233051c85a6a16f9
 
 # Target container with Gentoo Linux + necessary tools to build kernel and initramfs
 FROM --platform=amd64 gentoo/stage3@${GENTOO_STAGE3_IMAGE_DIGEST} as stage

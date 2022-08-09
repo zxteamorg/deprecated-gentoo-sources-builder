@@ -46,6 +46,8 @@ docker build --platform=amd64 --tag "ghcr.io/zxteamorg/deprecated-gentoo-sources
 ### Use the image
 
 ```shell
+export KERNEL_VERSION=5.15.52
+
 # Select arch
 #export ARCH=i686
 export ARCH=amd64
@@ -65,7 +67,7 @@ export SITE=digitaloceanvm
 #export SITE=virtualboxvm
 
 # Create cache volume
-docker volume create "${ARCH}-${SITE}-cache"
+docker volume create "${KERNEL_VERSION}-${ARCH}-${SITE}-cache"
 
 # Create work directory
 mkdir ".${SITE}"
@@ -73,13 +75,13 @@ mkdir ".${SITE}"
 # Make Kernel
 docker run --rm --interactive --tty \
   --mount type=bind,source="${PWD}/.${SITE}",target=/data/build \
-  --volume "${ARCH}-${SITE}-cache":/data/cache \
+  --volume "${KERNEL_VERSION}-${ARCH}-${SITE}-cache":/data/cache \
   --env SITE \
   "ghcr.io/zxteamorg/deprecated-gentoo-sources-builder/${ARCH}/${KERNEL_VERSION}" \
     menuconfig
 docker run --rm --interactive --tty \
   --mount type=bind,source="${PWD}/.${SITE}",target=/data/build \
-  --volume "${ARCH}-${SITE}-cache":/data/cache \
+  --volume "${KERNEL_VERSION}-${ARCH}-${SITE}-cache":/data/cache \
   --env SITE \
   "ghcr.io/zxteamorg/deprecated-gentoo-sources-builder/${ARCH}/${KERNEL_VERSION}" \
     kernel
@@ -88,14 +90,14 @@ docker run --rm --interactive --tty \
 # Make initramfs
 docker run --rm --interactive --tty \
   --mount type=bind,source="${PWD}/.${SITE}",target=/data/build \
-  --volume "${ARCH}-${SITE}-cache":/data/cache \
+  --volume "${KERNEL_VERSION}-${ARCH}-${SITE}-cache":/data/cache \
   --env SITE \
   "ghcr.io/zxteamorg/deprecated-gentoo-sources-builder/${ARCH}/${KERNEL_VERSION}" \
     initramfs
 
 
 # Cleanup
-docker volume rm "${ARCH}-${SITE}-cache"
+docker volume rm "${KERNEL_VERSION}-${ARCH}-${SITE}-cache"
 ```
 
 
@@ -107,8 +109,8 @@ To develop and debug `init` script you may attach `initramfs/init` file into con
 docker run --rm --interactive --tty \
   --mount type=bind,source="${PWD}/initramfs/init",target=/support/initramfs/init \
   --mount type=bind,source="${PWD}/.${SITE}",target=/data/build \
-  --volume "${ARCH}-${SITE}-cache":/data/cache \
+  --volume "${KERNEL_VERSION}-${ARCH}-${SITE}-cache":/data/cache \
   --env SITE \
-  "ghcr.io/zxteamorg/deprecated-gentoo-sources-builder/${ARCH}/5.15.52" \
+  "ghcr.io/zxteamorg/deprecated-gentoo-sources-builder/${ARCH}/${KERNEL_VERSION}" \
     initramfs
 ```

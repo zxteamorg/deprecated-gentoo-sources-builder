@@ -36,7 +36,7 @@ docker pull ghcr.io/zxteamorg/deprecated-gentoo-sources-builder/amd64/5.15.52
 #### Option: Build locally yourself
 
 ```shell
-export KERNEL_VERSION=5.15.52
+export KERNEL_VERSION=5.15.69
 
 docker build --platform=i386 --tag "ghcr.io/zxteamorg/deprecated-gentoo-sources-builder/i686/${KERNEL_VERSION}" --build-arg KERNEL_VERSION --file "docker/i686/Dockerfile" .
 
@@ -46,7 +46,7 @@ docker build --platform=amd64 --tag "ghcr.io/zxteamorg/deprecated-gentoo-sources
 ### Use the image
 
 ```shell
-export KERNEL_VERSION=5.15.52
+export KERNEL_VERSION=5.15.69
 
 # Select arch
 #export ARCH=i686

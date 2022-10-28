@@ -1,9 +1,9 @@
 # https://hub.docker.com/r/gentoo/stage3
-# gentoo/stage3:amd64-openrc-20220926
-ARG GENTOO_STAGE3_IMAGE_DIGEST=sha256:969a5dd411e45fd5f0f35cb0a0c6a9013e3127b08b99ec1f7be19db9135ddfaa
+# gentoo/stage3:amd64-openrc-20221024
+ARG GENTOO_STAGE3_IMAGE_DIGEST=sha256:d28a8eed72d104dfe719f6a0087b8fbe7c6c8a6be629f989c3cf7e00658c4d23
 
 # Target container with Gentoo Linux + necessary tools to build kernel and initramfs
-FROM --platform=amd64 gentoo/stage3@${GENTOO_STAGE3_IMAGE_DIGEST} as stage
+FROM --platform=linux/amd64 gentoo/stage3@${GENTOO_STAGE3_IMAGE_DIGEST} as stage
 ARG KERNEL_VERSION=
 
 RUN emerge-webrsync
@@ -106,7 +106,7 @@ RUN \
   rm -rf /var/log/*; \
   rm -rf /var/tmp/*
 
-FROM scratch
+FROM --platform=linux/amd64 scratch
 COPY --from=stage / /
 VOLUME [ "/data/build", "/data/cache" ]
 ENV SITE=

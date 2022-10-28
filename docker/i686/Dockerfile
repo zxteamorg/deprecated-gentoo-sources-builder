@@ -1,6 +1,6 @@
 # https://hub.docker.com/r/gentoo/stage3
-# gentoo/stage3:i686-openrc-20220926
-ARG GENTOO_STAGE3_IMAGE_DIGEST=sha256:22140c8811a326753077a76d1c4a92caca5f52a5539683f0a1d0d4642c10c092
+# gentoo/stage3:i686-openrc-20221024
+ARG GENTOO_STAGE3_IMAGE_DIGEST=sha256:d17c6c1961778e4506fb213b576172bb35c9d3da805da91d4ed73021e34ff5ff
 
 
 # Target container with Gentoo Linux + necessary tools to build kernel and initramfs
@@ -107,7 +107,7 @@ RUN \
   rm -rf /var/log/*; \
   rm -rf /var/tmp/*
 
-FROM scratch
+FROM --platform=386 scratch
 COPY --from=stage / /
 VOLUME [ "/data/build", "/data/cache" ]
 ENV SITE=

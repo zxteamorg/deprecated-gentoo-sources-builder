@@ -66,6 +66,7 @@ export SITE=digitaloceanvm
 #export SITE=hppro6470b_c3c58es_akd
 #export SITE=hppro6470b_d4h65ec_akd
 #export SITE=hppro6470b_h5e56et_abu
+#export SITE=qemu
 #export SITE=virtualboxvm
 
 # Create cache volume

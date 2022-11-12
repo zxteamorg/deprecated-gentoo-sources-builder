@@ -259,11 +259,16 @@ function build_initramfs() {
 			LIB_ITEMS+=("${NSSLIB}")
 		fi
 	done
-	for NSSLIB in $(ls -1 /lib64/libnss_*); do
-		if ! (printf '%s\n' "${LIB_ITEMS[@]}" | grep -xq "${NSSLIB}"); then
-			LIB_ITEMS+=("${NSSLIB}")
-		fi
-	done
+
+	case "${IMAGE_ARCH}" in
+		amd64)
+			for NSSLIB in $(ls -1 /lib64/libnss_*); do
+				if ! (printf '%s\n' "${LIB_ITEMS[@]}" | grep -xq "${NSSLIB}"); then
+					LIB_ITEMS+=("${NSSLIB}")
+				fi
+			done
+			;;
+	esac
 
 	for RESOLVLIB in $(ls -1 /lib/libresolv*); do
 		if ! (printf '%s\n' "${LIB_ITEMS[@]}" | grep -xq "${RESOLVLIB}"); then

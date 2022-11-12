@@ -1,1 +1,9 @@
-.*/
+./.*
+./*
+
+!/docker/docker-entrypoint.sh
+!/gentoo-overlay
+!/initramfs
+!/misc
+!/resources
+!/BANNER

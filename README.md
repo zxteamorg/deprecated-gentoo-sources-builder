@@ -55,22 +55,25 @@ export KERNEL_VERSION=5.10.150
 export ARCH=amd64
 
 # Select SITE
-#export SITE=asrockpv530aitx
+#export SITE=27K51EA#A2Q
+#export SITE=ASRockPV530
+#export SITE=B2G18EC#ABA
+#export SITE=C3C58ES#AKD
+#export SITE=D4H65EC#AKD
+#export SITE=DELLCS24SC
+#export SITE=H5E56ET#ABU
+#export SITE=VirtualBoxGuest
+#export SITE=zxtower00 #axx99v102a
+#export SITE=zxtower04 #Fujitsu
+
+# -- DEPRECATED --
 #export SITE=asusx402ca
-#export SITE=axx99v102a
-#export SITE=dellcs24sc
-#export SITE=zxtower04
-export SITE=digitaloceanvm
-#export SITE=hp255g8_27k51ea_a2q
-#export SITE=hppro6470b_b2g18ec_aba
-#export SITE=hppro6470b_c3c58es_akd
-#export SITE=hppro6470b_d4h65ec_akd
-#export SITE=hppro6470b_h5e56et_abu
+#export SITE=digitaloceanvm
 #export SITE=qemu
-#export SITE=virtualboxvm
+# ----------------
 
 # Create cache volume
-docker volume create "${KERNEL_VERSION}-${ARCH}-${SITE}-cache"
+docker volume create "${KERNEL_VERSION}-${ARCH}-$(echo ${SITE} | sed 's/#/_/g')-cache"
 
 # Create work directory
 mkdir ".${SITE}"
@@ -78,13 +81,13 @@ mkdir ".${SITE}"
 # Make Kernel
 docker run --rm --interactive --tty \
   --mount type=bind,source="${PWD}/.${SITE}",target=/data/build \
-  --volume "${KERNEL_VERSION}-${ARCH}-${SITE}-cache":/data/cache \
+  --volume "${KERNEL_VERSION}-${ARCH}-$(echo ${SITE} | sed 's/#/_/g')-cache":/data/cache \
   --env SITE \
   "ghcr.io/zxteamorg/deprecated-gentoo-sources-builder/${ARCH}/${KERNEL_VERSION}" \
     menuconfig
 docker run --rm --interactive --tty \
   --mount type=bind,source="${PWD}/.${SITE}",target=/data/build \
-  --volume "${KERNEL_VERSION}-${ARCH}-${SITE}-cache":/data/cache \
+  --volume "${KERNEL_VERSION}-${ARCH}-$(echo ${SITE} | sed 's/#/_/g')-cache":/data/cache \
   --env SITE \
   "ghcr.io/zxteamorg/deprecated-gentoo-sources-builder/${ARCH}/${KERNEL_VERSION}" \
     kernel
@@ -93,14 +96,14 @@ docker run --rm --interactive --tty \
 # Make initramfs
 docker run --rm --interactive --tty \
   --mount type=bind,source="${PWD}/.${SITE}",target=/data/build \
-  --volume "${KERNEL_VERSION}-${ARCH}-${SITE}-cache":/data/cache \
+  --volume "${KERNEL_VERSION}-${ARCH}-$(echo ${SITE} | sed 's/#/_/g')-cache":/data/cache \
   --env SITE \
   "ghcr.io/zxteamorg/deprecated-gentoo-sources-builder/${ARCH}/${KERNEL_VERSION}" \
     initramfs
 
 
 # Cleanup
-docker volume rm "${KERNEL_VERSION}-${ARCH}-${SITE}-cache"
+docker volume rm "${KERNEL_VERSION}-${ARCH}-$(echo ${SITE} | sed 's/#/_/g')-cache"
 ```
 
 
@@ -112,7 +115,7 @@ To develop and debug `init` script you may attach `initramfs/init` file into con
 docker run --rm --interactive --tty \
   --mount type=bind,source="${PWD}/initramfs/init",target=/support/initramfs/init \
   --mount type=bind,source="${PWD}/.${SITE}",target=/data/build \
-  --volume "${KERNEL_VERSION}-${ARCH}-${SITE}-cache":/data/cache \
+  --volume "${KERNEL_VERSION}-${ARCH}-$(echo ${SITE} | sed 's/#/_/g')-cache":/data/cache \
   --env SITE \
   "ghcr.io/zxteamorg/deprecated-gentoo-sources-builder/${ARCH}/${KERNEL_VERSION}" \
     initramfs

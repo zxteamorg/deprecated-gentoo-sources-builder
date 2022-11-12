@@ -79,24 +79,6 @@ RUN eselect kernel set 1
 
 RUN cd /usr/src/linux && make -C usr/ gen_init_cpio && chmod +x usr/gen_init_cpio usr/gen_initramfs.sh
 
-RUN sed -i 's/use_lvmetad = 1/use_lvmetad = 0/g' /etc/lvm/lvm.conf
-
-COPY BANNER /support/BANNER
-COPY misc /support/misc
-RUN echo "${KERNEL_VERSION}" > /support/KERNEL_VERSION
-RUN echo "amd64" > /support/IMAGE_ARCH
-
-# === Sites ==============================================================
-COPY sites/amd64/                                   /support/sites/
-# ========================================================================
-
-# Initramfs
-COPY initramfs/init                                 /support/initramfs/init
-COPY initramfs/initramfs_list.amd64                 /support/initramfs/initramfs_list
-COPY initramfs/uncrypt                              /support/initramfs/uncrypt
-
-COPY docker/docker-entrypoint.sh /support/docker-entrypoint.sh
-
 RUN \
   rm -rf /run/*; \
   rm -rf /tmp/*; \
@@ -105,6 +87,25 @@ RUN \
   rm -rf /var/db/*; \
   rm -rf /var/log/*; \
   rm -rf /var/tmp/*
+
+RUN sed -i 's/use_lvmetad = 1/use_lvmetad = 0/g' /etc/lvm/lvm.conf
+
+COPY BANNER /support/BANNER
+COPY misc /support/misc
+RUN echo "${KERNEL_VERSION}" > /support/KERNEL_VERSION
+RUN echo "amd64" > /support/IMAGE_ARCH
+
+# Initramfs
+COPY initramfs/init                                 /support/initramfs/init
+COPY initramfs/initramfs_list.amd64                 /support/initramfs/initramfs_list
+COPY initramfs/uncrypt                              /support/initramfs/uncrypt
+
+COPY docker/docker-entrypoint.sh /support/docker-entrypoint.sh
+
+# === Profiles ==============================================================
+COPY gentoo-overlay/                                   /support/gentoo-overlay/
+# ===========================================================================
+
 
 FROM --platform=linux/amd64 scratch
 COPY --from=stage / /

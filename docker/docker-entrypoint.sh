@@ -50,12 +50,11 @@ function initconfig_kernel() {
 
 		if [ ! -f "${KBUILD_OUTPUT}/.config" ]; then
 
-			LATEST_SITE_KERNEL_CONFIG_FILE=$(ls "/support/sites/${SITE}"/config-*-gentoo-* | sort -rV | head -1)
-			if [ -f "${LATEST_SITE_KERNEL_CONFIG_FILE}" ]; then
-				echo "Initialize kernel configuration from ${LATEST_SITE_KERNEL_CONFIG_FILE} ..."
-				cp "${LATEST_SITE_KERNEL_CONFIG_FILE}" "${KBUILD_OUTPUT}/.config"
+			if [ -f "/support/gentoo-overlay/profiles/${SITE}/kernel.config" ]; then
+				echo "Initialize kernel configuration from /support/gentoo-overlay/profiles/${SITE}/kernel.config ..."
+				cp "/support/gentoo-overlay/profiles/${SITE}/kernel.config" "${KBUILD_OUTPUT}/.config"
 			else
-				echo "Cannot initialize kernel configuration due a file /support/sites/${SITE}/config-${KERNEL_SLUG} not found."
+				echo "Cannot initialize kernel configuration due a file /support/gentoo-overlay/profiles/${SITE}/kernel.config not found."
 			fi
 		fi
 	else

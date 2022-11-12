@@ -1,0 +1,3 @@
+[submodule "gentoo-overlay"]
+	path = gentoo-overlay
+	url = git@github.com:osfordev/gentoo-overlay.git

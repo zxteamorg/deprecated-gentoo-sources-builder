@@ -71,38 +71,55 @@ export ARCH=amd64
 #export SITE=digitaloceanvm
 #export SITE=qemu
 # ----------------
+```
+
 
 # Create cache volume
+```shell
 docker volume create "${KERNEL_VERSION}-${ARCH}-$(echo ${SITE} | sed 's/#/_/g')-cache"
+```
 
 # Create work directory
+```shell
 mkdir ".${SITE}"
+```
 
 # Make Kernel
+```shell
 docker run --rm --interactive --tty \
   --mount type=bind,source="${PWD}/.${SITE}",target=/data/build \
   --volume "${KERNEL_VERSION}-${ARCH}-$(echo ${SITE} | sed 's/#/_/g')-cache":/data/cache \
   --env SITE \
   "ghcr.io/zxteamorg/deprecated-gentoo-sources-builder/${ARCH}/${KERNEL_VERSION}" \
     menuconfig
+```
+
+You may want to save kernel cfg changes into our Gentoo Overlay
+```shell
+cp .${SITE}/boot/config-${KERNEL_VERSION}-gentoo-${SITE} gentoo-overlay/profiles/${SITE}/kernel.config
+```
+
+```shell
 docker run --rm --interactive --tty \
   --mount type=bind,source="${PWD}/.${SITE}",target=/data/build \
   --volume "${KERNEL_VERSION}-${ARCH}-$(echo ${SITE} | sed 's/#/_/g')-cache":/data/cache \
   --env SITE \
   "ghcr.io/zxteamorg/deprecated-gentoo-sources-builder/${ARCH}/${KERNEL_VERSION}" \
     kernel
-
+```
 
 # Make initramfs
+```shell
 docker run --rm --interactive --tty \
   --mount type=bind,source="${PWD}/.${SITE}",target=/data/build \
   --volume "${KERNEL_VERSION}-${ARCH}-$(echo ${SITE} | sed 's/#/_/g')-cache":/data/cache \
   --env SITE \
   "ghcr.io/zxteamorg/deprecated-gentoo-sources-builder/${ARCH}/${KERNEL_VERSION}" \
     initramfs
-
+```
 
 # Cleanup
+```shell
 docker volume rm "${KERNEL_VERSION}-${ARCH}-$(echo ${SITE} | sed 's/#/_/g')-cache"
 ```
 

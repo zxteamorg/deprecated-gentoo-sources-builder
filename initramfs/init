@@ -37,6 +37,16 @@ fatal() {
 	exec /bin/busybox sh
 }
 
+register_cleanup_command() {
+	sed -i "5 i $1" /tmp/cleanup.sh
+}
+
+register_rollback_command() {
+	sed -i "5 i $1" /tmp/rollback.sh
+}
+
+
+
 z_dhcp() {
 	[ -n "$1" ] || fatal "z_dhcp(): Wrong argument error. Example: z_dhcp=\"eth0;eth1\""
 
@@ -47,7 +57,7 @@ z_dhcp() {
 	for DEV in ${FRIENDLY_ARGS}; do
 		/sbin/ip link set up "${DEV}" || fatal "z_dhcp(): Failure set UP state for device ${DEV}."
 		/sbin/udhcpc -i "${DEV}" -s /usr/share/udhcpc/default.script || fatal "z_dhcp(): Failure obtain lease for device ${DEV}." 
-		echo "pkill -f /sbin/udhcpc" >> /tmp/cleanup.sh
+		register_cleanup_command "pkill -f /sbin/udhcpc"
 	done
 }
 
@@ -124,8 +134,8 @@ z_ip() {
 
 		info "Set up IP address: $IP $MASK for dev $DEV"
 		ifconfig "$DEV" "$IP" netmask "$MASK" || fatal "Failure set IP address ${IP_WITH_MASK}."
-		echo "ifconfig $DEV 0.0.0.0" >> /tmp/cleanup.sh
-		echo "ifconfig $DEV down" >> /tmp/cleanup.sh
+		register_cleanup_command "ifconfig $DEV down"
+		register_cleanup_command "ifconfig $DEV 0.0.0.0"
 
 		if [ -z "$GW" ]; then
 			info "Gateway is not defined"
@@ -149,7 +159,7 @@ z_md() {
 		info " Assembling software RAID ${MD_DEV} on devices ${MEMBER_DEVS}..."
 		/sbin/mdadm --assemble --run "${MD_DEV}" ${MEMBER_DEVS} || fatal "z_md(): Failure MD assemble software RAID ${MD_DEV} on devices ${MEMBER_DEVS}"
 		#/sbin/mdadm --assemble --update=name --run ${MD_DEV} ${MEMBER_DEVS} || fatal "z_md(): Cannot MD assemble: ${MD_DEV} ${MEMBER_DEVS}"
-		sed -i "5 i /sbin/mdadm --stop \"${MD_DEV}\"" /tmp/rollback.sh
+		register_rollback_command "/sbin/mdadm --stop \"${MD_DEV}\""
 	done
 }
 
@@ -164,6 +174,10 @@ z_pwd() {
 }
 
 z_reboot() {
+	echo "Executing rollback script..."
+	echo
+	echo /tmp/rollback.sh
+	echo
 	/tmp/rollback.sh || fatal "Rollback failed."
 
 	reboot -f
@@ -189,7 +203,7 @@ z_root() {
 	fi
 
 	mount -o "${OPTS}" -n -t "${FS}" "/dev/${DEV}" /newroot || fatal "z_root(): Failure mount /dev/${DEV} to /newroot"
-	sed -i "5 i umount /newroot" /tmp/rollback.sh
+	register_rollback_command "umount /newroot"
 }
 
 z_shell() {
@@ -267,7 +281,7 @@ z_ssh() {
 	# /usr/bin/dropbearkey -t rsa -f /root/dropbear.rsa; /usr/bin/dropbearkey -t dss -f /root/dropbear.dss; strace /usr/sbin/dropbear -p 10022 -r /root/dropbear.rsa -d /root/dropbear.dss -F
 
 	/usr/sbin/dropbear -r /root/dropbear.rsa -d /root/dropbear.dss || fatal "Failure start Dropbear SSH Server"
-	echo "pkill -f /usr/sbin/dropbear" >> /tmp/cleanup.sh
+	register_cleanup_command "pkill -f /usr/sbin/dropbear"
 }
 
 z_mkfs_ext4() {
@@ -428,11 +442,21 @@ z_stratum_reset_system() {
 	STRATUM_IMAGES_DEV=/dev/$(echo "$1" | cut -d, -f2)
 
 	mkdir /run/stratum || fatal "z_stratum_reset_system(): Failure create directory /run/stratum"
+	register_cleanup_command "rmdir /run/stratum"
+	register_rollback_command "rmdir /run/stratum"
+
 	mkdir /run/stratum/images || fatal "z_stratum_reset_system(): Failure create directory /run/stratum/images"
+	register_cleanup_command "rmdir /run/stratum/images"
+	register_rollback_command "rmdir /run/stratum/images"
+
 	mkdir /run/stratum/state || fatal "z_stratum_reset_system(): Failure create directory /run/stratum/state"
+	register_cleanup_command "rmdir /run/stratum/state"
+	register_rollback_command "rmdir /run/stratum/state"
 
 	mount -t ext4 -o ro "${STRATUM_IMAGES_DEV}" /run/stratum/images || fatal "z_stratum_reset_system(): Failure mount \"${STRATUM_IMAGES_DEV}\" to /run/stratum/images"
 	info "z_stratum_reset_system(): /run/stratum/images mounted from ${STRATUM_IMAGES_DEV}"
+	register_cleanup_command "umount /run/stratum/images"
+	register_rollback_command "umount /run/stratum/images"
 
 	local LAYER_NUMBER=0
 	local IMAGE_HASH=
@@ -450,6 +474,8 @@ z_stratum_reset_system() {
 	if [ ! -d "${STATE_DIR}" ]; then
 		mkdir "${STATE_DIR}" || fatal "z_stratum_reset_system(): Failure create state dir ${STATE_DIR}"
 		info "z_stratum_reset_system(): ${STATE_DIR} state directory was created"
+		register_cleanup_command "umount \"${STATE_DIR}\""
+		register_rollback_command "umount \"${STATE_DIR}\""
 	fi
 
 	while [ -n "${IMAGE_HASH}" ]; do
@@ -479,12 +505,16 @@ z_stratum_reset_system() {
 		local LAYER_DIR="${STATE_DIR}/${LAYER_NAME}"
 
 		if [ ! -d "${LAYER_DIR}" ]; then
-			mkdir "${LAYER_DIR}" || fatal "z_stratum_reset_system(): Failure create layer dir ${STATE_DIR}"
+			mkdir "${LAYER_DIR}" || fatal "z_stratum_reset_system(): Failure create layer dir ${LAYER_DIR}"
 			info "z_stratum_reset_system(): ${LAYER_DIR} layer directory was created"
+			register_cleanup_command "umount \"${LAYER_DIR}\""
+			register_rollback_command "umount \"${LAYER_DIR}\""
 		fi
 
 		mount -t squashfs -o ro,loop "${IMAGE_DATA_FILE}" "${LAYER_DIR}" || fatal "z_stratum_reset_system(): Failure mount layer \"${IMAGE_DATA_FILE}\" to \"${LAYER_DIR}\""
 		info "z_stratum_reset_system(): ${IMAGE_DATA_FILE} layer image was mounted to ${LAYER_DIR}"
+		register_cleanup_command "umount \"${LAYER_DIR}\""
+		register_rollback_command "umount \"${LAYER_DIR}\""
 
 		if [ -n "${LOWERDIRS}" ]; then
 			LOWERDIRS="${LOWERDIRS}:${LAYER_DIR}"
@@ -497,12 +527,15 @@ z_stratum_reset_system() {
 	done
 
 	mount -o remount,ro "${STRATUM_IMAGES_DEV}" || fatal "z_stratum_reset_system(): Failure re-mount \"${STRATUM_IMAGES_DEV}\" as Read-Only."
+	info "z_stratum_reset_system(): /run/stratum/images re-mounted as read-only"
 
 	local WORK_DIR="${STATE_DIR}/.work"
 
 	if [ ! -d "${WORK_DIR}" ]; then
 		mkdir "${WORK_DIR}" || fatal "z_stratum_reset_system(): Failure create layer dir ${WORK_DIR}"
 		info "z_stratum_reset_system(): ${WORK_DIR} work directory was created"
+		register_cleanup_command "umount \"${WORK_DIR}\""
+		register_rollback_command "umount \"${WORK_DIR}\""
 	fi
 
 	local TOP_DIR="${STATE_DIR}/top"
@@ -510,20 +543,28 @@ z_stratum_reset_system() {
 	if [ ! -d "${TOP_DIR}" ]; then
 		mkdir "${TOP_DIR}" || fatal "z_stratum_reset_system(): Failure create layer dir ${TOP_DIR}"
 		info "z_stratum_reset_system(): ${TOP_DIR} top directory was created"
+		register_cleanup_command "umount \"${TOP_DIR}\""
+		register_rollback_command "umount \"${TOP_DIR}\""
 	fi
 
 	mkdir /run/stratum-root || fatal "z_stratum_reset_system(): Failure create stratum root dir /run/stratum-root"
 	mount -t overlay -o "ro,lowerdir=${LOWERDIRS},workdir=${WORK_DIR},upperdir=${TOP_DIR}" stratum_root /run/stratum-root || fatal "z_stratum_reset_system(): Failure mount overlay /run/stratum-root based on ${LOWERDIRS}"
+	info "z_stratum_reset_system(): Overlay images mounted to /run/stratum-root"
+	register_cleanup_command "umount /run/stratum-root"
+	register_rollback_command "umount /run/stratum-root"
 
 	mkfs.ext4 -L system -F -N 4194304 "${SYSTEM_DEV}" || fatal "z_stratum_reset_system(): Failure mkfs.ext4 on \"${SYSTEM_DEV}\""
 
 	mkdir /run/system-root || fatal "z_stratum_reset_system(): Failure create stratum root dir /run/system-root"
 	mount -t ext4 "${SYSTEM_DEV}" /run/system-root || fatal "z_stratum_reset_system(): Failure mount system root ${SYSTEM_DEV} to /run/system-root"
+	info "z_stratum_reset_system(): System volume ${SYSTEM_DEV} mounted to /run/system-root"
+	register_cleanup_command "umount /run/system-root"
+	register_rollback_command "umount /run/system-root"
 
 	echo "Coping system files... Please wait a little bit..."
 	cp -a /run/stratum-root/. /run/system-root/ || fatal "z_stratum_reset_system(): Failure to copy system files."
 
-	umount /run/system-root || fatal "z_stratum_reset_system(): Failure unmount system root /run/system-root"
+	# Nothing needs to umount due to use register_cleanup_command/register_rollback_command
 }
 
 z_stratum_pull() {
@@ -542,8 +583,8 @@ z_stratum_pull() {
 	mkdir /run/stratum/state || fatal "z_stratum_pull(): Failure create directory /run/stratum/state"
 
 	mount -t "${STRATUM_IMAGES_FS}" -o rw "${STRATUM_IMAGES_DEV}" /run/stratum/images || fatal "z_stratum_pull(): Failure mount \"${STRATUM_IMAGES_DEV}\" to /run/stratum/images"
-	sed -i "5 i umount /run/stratum/images" /tmp/rollback.sh
 	info "z_stratum_pull(): /run/stratum/images mounted from ${STRATUM_IMAGES_DEV}"
+	register_rollback_command "umount /run/stratum/images"
 
 	local LAYER_NUMBER=0
 	local IMAGE_HASH=
@@ -586,8 +627,8 @@ z_stratum_pull() {
 		fi
 
 		mount -t squashfs -o ro,loop "${IMAGE_DATA_FILE}" "${LAYER_DIR}" || fatal "z_stratum_pull(): Failure mount layer \"${IMAGE_DATA_FILE}\" to \"${LAYER_DIR}\""
-		sed -i "5 i umount \"${LAYER_DIR}\"" /tmp/rollback.sh
 		info "z_stratum_pull(): ${IMAGE_DATA_FILE} layer image was mounted to ${LAYER_DIR}"
+		register_rollback_command "umount \"${LAYER_DIR}\""
 
 		IMAGE_HASH=$(cat "${IMAGE_MANIFEST_FILE}" | grep -e "^BASE: " | rev | cut -d' ' -f1 | rev)
 		let "LAYER_NUMBER=$LAYER_NUMBER+1"
@@ -723,7 +764,7 @@ z_vg() {
 	for VG in ${FRIENDLY_ARGS}; do
  		info " Activating Volume Group: ${VG}"
 		/sbin/vgchange --activate y "${VG}" || fatal "z_vg(): Failure activate volume ${VG}"
-		sed -i "5 i /sbin/vgchange --activate n \"${VG}\"" /tmp/rollback.sh
+		register_rollback_command "/sbin/vgchange --activate n \"${VG}\""
 	done
 }
 
@@ -747,6 +788,7 @@ unset UDEV_RC
 echo "#!/bin/busybox sh" > /tmp/cleanup.sh
 echo >> /tmp/cleanup.sh
 echo "set -e" >> /tmp/cleanup.sh
+echo >> /tmp/cleanup.sh
 echo >> /tmp/cleanup.sh
 chmod +x /tmp/cleanup.sh || fatal "Failure make executeble cleanup script /tmp/cleanup.sh"
 
@@ -780,6 +822,9 @@ sleep 1
 
 if [ -x /tmp/cleanup.sh ]; then
 	echo "Executing cleanup script..."
+	echo
+	echo /tmp/cleanup.sh
+	echo
 	/tmp/cleanup.sh || fatal "Cleanup failed."
 fi
 
